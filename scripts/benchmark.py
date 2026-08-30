@@ -1193,7 +1193,9 @@ def aggregate_judgments(
         }
         label, vote_count = max(votes.items(), key=lambda item: item[1])
         if vote_count < 3:
-            raise BenchmarkError(f"{fixture.name}: judge panel has no majority for {fact_id}: {votes}")
+            # A tie means the fact is genuinely contested; record it instead of discarding the whole run.
+            facts.append({"id": fact_id, "grade": "disputed", "reason": f"panel votes {votes}", "panel": panel})
+            continue
         facts.append({"id": fact_id, "grade": label, "reason": f"panel votes {votes}", "panel": panel})
     invented_votes: dict[int, set[str]] = {}
     invented_quotes: dict[int, str] = {}
@@ -1209,7 +1211,7 @@ def aggregate_judgments(
     ]
     counts = {
         label: sum(fact["grade"] == label for fact in facts)
-        for label in ("retained", "distorted", "missing")
+        for label in ("retained", "distorted", "missing", "disputed")
     }
     counts["invented"] = len(invented)
     return {

@@ -65,7 +65,7 @@ class FixtureTests(unittest.TestCase):
         benchmark.validate_judgment(fixture, gold, answer, judgment)
         judgments = {f"judge-{i}": judgment for i in range(5)}
         result = benchmark.aggregate_judgments(fixture, gold, judgments)
-        self.assertEqual(result["counts"], {"retained": 20, "distorted": 0, "missing": 0, "invented": 0})
+        self.assertEqual(result["counts"], {"retained": 20, "distorted": 0, "missing": 0, "disputed": 0, "invented": 0})
         facts[0] = {"id": "fact-01", "grade": "retained", "candidate_lines": "2", "reason": "same"}
         with self.assertRaisesRegex(benchmark.BenchmarkError, "numbered answer item"):
             benchmark.validate_judgment(fixture, gold, answer, judgment)
@@ -86,7 +86,7 @@ class FixtureTests(unittest.TestCase):
         result = benchmark.aggregate_judgments(fixture, gold, judgments)
         self.assertEqual(result["counts"]["invented"], 0)
 
-    def test_panel_rejects_two_two_one_vote(self) -> None:
+    def test_panel_marks_two_two_one_vote_disputed(self) -> None:
         fixture = benchmark.Fixture("panel", Path("."), Path("source.jsonl"), {}, [], "", 0)
         gold = {"facts": [{"id": f"fact-{i:02d}"} for i in range(1, 21)]}
         judgments = {}
@@ -97,8 +97,10 @@ class FixtureTests(unittest.TestCase):
                 for i in range(1, 21)
             ]
             judgments[str(seat)] = {"facts": facts, "invented_claims": [], "judge_note": ""}
-        with self.assertRaisesRegex(benchmark.BenchmarkError, "no majority"):
-            benchmark.aggregate_judgments(fixture, gold, judgments)
+        result = benchmark.aggregate_judgments(fixture, gold, judgments)
+        self.assertEqual(result["facts"][0]["grade"], "disputed")
+        self.assertEqual(result["counts"]["disputed"], 1)
+        self.assertEqual(result["counts"]["retained"], 19)
 
     def test_judge_uses_fresh_session_and_model_output_override(self) -> None:
         fixture = benchmark.Fixture.load("lucid-aug20")
