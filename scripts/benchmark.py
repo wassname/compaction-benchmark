@@ -622,9 +622,60 @@ def fixture_names() -> list[str]:
     return sorted(path.name for path in FIXTURES.iterdir() if (path / "manifest.json").is_file())
 
 
+def validate_goal1(fixtures: list[Fixture], trial: int) -> dict[str, Any]:
+    rows = []
+    for fixture in fixtures:
+        fixture.assert_unchanged()
+        gold_path = fixture.directory / "gold.json"
+        gold = load_gold(fixture)
+        work = RUNS / fixture.name / "uncompacted-baseline" / f"trial-{trial:02d}"
+        artifacts = OUTPUTS / fixture.name / "uncompacted-baseline" / f"trial-{trial:02d}"
+        run = json.loads((artifacts / "run.json").read_text())
+        answer_path = work / "answer.json"
+        grade_path = work / "grade.json"
+        answer = json.loads(answer_path.read_text())
+        grade = json.loads(grade_path.read_text())
+        source_ids = {entry["id"] for entry in fixture.entries}
+        session_entries = [json.loads(line) for line in (work / "session.jsonl").read_text().splitlines()]
+        new_entries = [entry for entry in session_entries if entry.get("id") not in source_ids]
+        if len(gold["facts"]) != FACTS_PER_FIXTURE:
+            raise BenchmarkError(f"{fixture.name}: validation found wrong gold count")
+        if run["source_sha256"] != fixture.source_hash or answer["source_sha256"] != fixture.source_hash:
+            raise BenchmarkError(f"{fixture.name}: validation found a source hash mismatch")
+        if run["gold_sha256"] != sha256(gold_path):
+            raise BenchmarkError(f"{fixture.name}: baseline used a stale gold file")
+        if grade["source_sha256"] != fixture.source_hash or grade["grader_source_sha256"] != fixture.source_hash:
+            raise BenchmarkError(f"{fixture.name}: grader source hash mismatch")
+        if grade["counts"]["retained"] <= FACTS_PER_FIXTURE * 0.9:
+            raise BenchmarkError(f"{fixture.name}: validation retained only {grade['counts']['retained']}/20")
+        if "--no-builtin-tools" not in run["command"] or any(entry_uses_tool(entry) for entry in new_entries):
+            raise BenchmarkError(f"{fixture.name}: validation found recall tool use")
+        rows.append(
+            {
+                "fixture": fixture.name,
+                "gold": len(gold["facts"]),
+                "pre": sum(fact["source_region"] == "pre_first_kept" for fact in gold["facts"]),
+                "tail": sum(fact["source_region"] == "retained_tail_control" for fact in gold["facts"]),
+                "counts": grade["counts"],
+                "source_sha256": fixture.source_hash,
+                "gold_sha256": sha256(gold_path),
+                "answer_sha256": sha256(answer_path),
+                "grade_sha256": sha256(grade_path),
+                "session_sha256": sha256(work / "session.jsonl"),
+                "baseline_command": f"uv run python scripts/benchmark.py baseline {fixture.name} --trial {trial}",
+                "grade_command": f"uv run python scripts/benchmark.py grade {fixture.name} --trial {trial}",
+            }
+        )
+    return {
+        "producer": f"uv run python scripts/benchmark.py validate-goal1 --trial {trial}",
+        "tests_command": "uv run python -m unittest scripts/test_benchmark.py -v",
+        "rows": rows,
+    }
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=("gold", "baseline", "grade", "goal1"))
+    parser.add_argument("command", choices=("gold", "baseline", "grade", "goal1", "validate-goal1"))
     parser.add_argument("fixtures", nargs="*", help="fixture names; default: all")
     parser.add_argument("--trial", type=int, choices=TRIALS, help="run one trial instead of all three")
     args = parser.parse_args()
@@ -633,6 +684,9 @@ def main() -> None:
         if name not in fixture_names():
             raise BenchmarkError(f"unknown fixture {name!r}")
     fixtures = [Fixture.load(name) for name in names]
+    if args.command == "validate-goal1":
+        print(json.dumps(validate_goal1(fixtures, args.trial or 1), indent=2))
+        return
     if args.command in {"gold", "goal1"}:
         for fixture in fixtures:
             print(generate_gold(fixture))
