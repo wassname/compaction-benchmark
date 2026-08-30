@@ -1,0 +1,12 @@
+version = 1
+revision = 3
+requires-python = ">=3.12"
+
+[options]
+exclude-newer = "2026-08-22T00:59:55.28056773Z"
+exclude-newer-span = "P8D"
+
+[[package]]
+name = "compaction-benchmark"
+version = "0.1.0"
+source = { virtual = "." }

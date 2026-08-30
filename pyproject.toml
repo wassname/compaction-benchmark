@@ -1,0 +1,10 @@
+[project]
+name = "compaction-benchmark"
+version = "0.1.0"
+description = "Post-compaction factual recall evaluation for Pi sessions"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []
+
+[tool.uv]
+exclude-newer = "8 days"
