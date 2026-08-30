@@ -42,7 +42,10 @@ JUDGE_PANEL = (
 JUDGE_THINKING_LEVEL = "off"
 JUDGE_MAX_OUTPUT_TOKENS = 8192
 JUDGE_MIN_SEATS = 3
-JUDGE_RUBRIC_VERSION = 2
+# A seat sits only when its retention gap between the gold and off-topic anchors clears this.
+# (claude, adapting wassname-ml-bench's gold-minus-offtopic > 0.5 calibration gate.)
+JUDGE_CALIBRATION_GAP = 0.5
+JUDGE_RUBRIC_VERSION = 3
 FACTS_PER_FIXTURE = 20
 TRIALS = (1, 2, 3)
 
@@ -945,6 +948,36 @@ def validate_fact_judgment(fixture: Fixture, gold: dict[str, Any], answer: str, 
     return judgment
 
 
+def validate_fact_judgment_lenient(fixture: Fixture, gold: dict[str, Any], answer: str, judgment: dict[str, Any]) -> dict[str, Any]:
+    """Calibration-only: check structure, never a citation. (claude)
+
+    Strict validation raises when a wrongly "retained" fact has no line to cite, which crashes the
+    seat. Calibration instead measures that mislabel, so a bad seat fails its gap gate rather than
+    raising the whole panel.
+    """
+    if not isinstance(judgment, dict):
+        raise BenchmarkError(f"{fixture.name}: fact judgment is not an object")
+    facts = judgment.get("facts")
+    if not isinstance(facts, list) or len(facts) != FACTS_PER_FIXTURE or not all(isinstance(fact, dict) for fact in facts):
+        raise BenchmarkError(f"{fixture.name}: grader did not return {FACTS_PER_FIXTURE} fact objects")
+    expected = {fact["id"] for fact in gold["facts"]}
+    if {fact.get("id") for fact in facts} != expected:
+        raise BenchmarkError(f"{fixture.name}: grader returned wrong fact IDs")
+    for fact in facts:
+        label = fact.get("grade")
+        if label not in {"retained", "distorted", "missing"} or not isinstance(fact.get("reason"), str):
+            raise BenchmarkError(f"{fixture.name}: grader returned an invalid fact object")
+        line_spec = fact.get("candidate_lines")
+        if not isinstance(line_spec, str):
+            fact["candidate_lines"] = ""
+            line_spec = ""
+        quote, owners = cited_candidate_lines(answer, line_spec) if line_spec.strip() else ("", set())
+        fact["candidate_quote"] = quote
+    if not isinstance(judgment.get("judge_note"), str):
+        raise BenchmarkError(f"{fixture.name}: fact grader omitted judge_note")
+    return judgment
+
+
 def validate_invention_judgment(fixture: Fixture, answer: str, judgment: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(judgment, dict):
         raise BenchmarkError(f"{fixture.name}: invention judgment is not an object")
@@ -1012,6 +1045,9 @@ def run_judge(
     trial: int,
     provider: str,
     model_id: str,
+    *,
+    lenient: bool = False,
+    skip_inventions: bool = False,
 ) -> dict[str, Any]:
     slug = judge_slug(model_id)
     work = EVALUATORS / fixture.name / grade_kind / f"trial-{trial:02d}" / slug
@@ -1049,27 +1085,32 @@ def run_judge(
             "facts",
             facts_prompt,
             facts_prompt + "\nCorrect the JSON only. Keep each decision unless the error proves it inconsistent.",
-            lambda value: validate_fact_judgment(fixture, gold, answer, value),
+            lambda value: (validate_fact_judgment_lenient if lenient else validate_fact_judgment)(
+                fixture, gold, answer, value
+            ),
         )
-        inventions_prompt = invention_prompt(fixture, answer)
-        invention_correction = json.dumps(
-            {
-                "instruction": "Correct only the invention JSON. Candidate line citations refer to candidate_answer below.",
-                "candidate_answer": with_line_numbers(answer),
-                "required_schema": {"invented_claims": [{"candidate_lines": "line or range", "reason": "short"}], "judge_note": "string"},
-            },
-            ensure_ascii=False,
-        )
-        invention_judgment = run_judge_turn(
-            rpc,
-            artifacts,
-            fixture,
-            model_id,
-            "inventions",
-            inventions_prompt,
-            invention_correction,
-            lambda value: validate_invention_judgment(fixture, answer, value),
-        )
+        if skip_inventions:
+            invention_judgment = {"invented_claims": [], "judge_note": ""}
+        else:
+            inventions_prompt = invention_prompt(fixture, answer)
+            invention_correction = json.dumps(
+                {
+                    "instruction": "Correct only the invention JSON. Candidate line citations refer to candidate_answer below.",
+                    "candidate_answer": with_line_numbers(answer),
+                    "required_schema": {"invented_claims": [{"candidate_lines": "line or range", "reason": "short"}], "judge_note": "string"},
+                },
+                ensure_ascii=False,
+            )
+            invention_judgment = run_judge_turn(
+                rpc,
+                artifacts,
+                fixture,
+                model_id,
+                "inventions",
+                inventions_prompt,
+                invention_correction,
+                lambda value: validate_invention_judgment(fixture, answer, value),
+            )
         return {
             "facts": fact_judgment["facts"],
             "invented_claims": invention_judgment["invented_claims"],
@@ -1135,12 +1176,16 @@ def grade_answer_panel(
     trial: int,
     eligible_judges: set[str] | None = None,
     require_majority: bool = True,
+    *,
+    lenient: bool = False,
+    skip_inventions: bool = False,
 ) -> dict[str, Any]:
     selected = [seat for seat in JUDGE_PANEL if eligible_judges is None or seat[1] in eligible_judges]
     with concurrent.futures.ThreadPoolExecutor(max_workers=len(selected)) as executor:
         futures = {
             model_id: executor.submit(
-                run_judge, fixture, gold, answer, grade_kind, trial, provider, model_id
+                run_judge, fixture, gold, answer, grade_kind, trial, provider, model_id,
+                lenient=lenient, skip_inventions=skip_inventions,
             )
             for provider, model_id in selected
         }
@@ -1292,50 +1337,90 @@ CALIBRATION_CHANGES = {
 }
 
 
-def calibration_answer(gold: dict[str, Any], replacement: tuple[int, str] | None = None) -> str:
-    return "\n".join(
-        f"{number}. {replacement[1] if replacement and number == replacement[0] else fact['gold_answer']}"
-        for number, fact in enumerate(gold["facts"], 1)
-    )
+def numbered_answer(answers: list[str]) -> str:
+    return "\n".join(f"{number}. {answers[number - 1]}" for number in range(1, len(answers) + 1))
 
 
 def calibrate_judges(fixtures: list[Fixture], trial: int) -> dict[str, Any]:
+    """Seat a judge on discrimination gap, not exact label reproduction. (claude, ml-bench design)
+
+    wassname-ml-bench/bench.py calibrates each judge on two fixed anchors, the item's own gold
+    answer (must read high) and an off-topic answer (must read low), and requires the gap to clear
+    a threshold rather than reproduce exact counts. Here the retention anchors are the exact gold
+    answers versus each fact's gold answer shifted to the wrong question, so a rubber-stamp judge
+    has a gap of zero and drops out. Paraphrase, distortion, and invention anchors check the one
+    changed fact specifically.
+    """
     fixture_rows = []
     all_rows = []
     for fixture in fixtures:
         gold = load_gold(fixture)
         change = CALIBRATION_CHANGES[fixture.name]
-        seat_pass = {model_id: True for _, model_id in JUDGE_PANEL}
-        seat_failures: dict[str, list[str]] = {model_id: [] for _, model_id in JUDGE_PANEL}
+        change_index = change["item"] - 1
+        changed_id = f"fact-{change['item']:02d}"
+        answers = [fact["gold_answer"] for fact in gold["facts"]]
+
+        def replaced(index: int, text: str) -> list[str]:
+            out = list(answers)
+            out[index] = text
+            return out
+
+        off_topic = answers[1:] + answers[:1]
+        unsupported = [""] * len(answers)
+        unsupported[0] = "The source establishes that the Moon is made entirely of cheddar cheese."
         variants = {
-            "gold": (calibration_answer(gold), {"retained": 20, "distorted": 0, "missing": 0, "invented": 0}),
-            "paraphrased": (calibration_answer(gold, (change["item"], change["paraphrased"])), {"retained": 20, "distorted": 0, "missing": 0, "invented": 0}),
-            "distorted": (calibration_answer(gold, (change["item"], change["distorted"])), {"retained": 19, "distorted": 1, "missing": 0, "invented": 1}),
-            "empty": ("", {"retained": 0, "distorted": 0, "missing": 20, "invented": 0}),
-            "unsupported": ("1. The source establishes that the Moon is made entirely of cheddar cheese.", {"retained": 0, "distorted": 0, "missing": 20, "invented": 1}),
+            "gold": numbered_answer(answers),
+            "offtopic": numbered_answer(off_topic),
+            "paraphrased": numbered_answer(replaced(change_index, change["paraphrased"])),
+            "distorted": numbered_answer(replaced(change_index, change["distorted"])),
+            "unsupported": numbered_answer(unsupported),
         }
-        for variant, (answer, expected) in variants.items():
-            result = grade_answer_panel(fixture, gold, answer, f"judge-calibration-{variant}", trial, require_majority=False)
-            seat_counts = {judge: judgment_counts(judgment) for judge, judgment in result["judgments"].items()}
-            for judge, counts in seat_counts.items():
-                if counts != expected:
-                    seat_pass[judge] = False
-                    seat_failures[judge].append(f"{variant}: {counts}, expected {expected}")
+        metrics: dict[str, dict[str, Any]] = {model_id: {} for _, model_id in JUDGE_PANEL}
+        for variant, answer in variants.items():
+            result = grade_answer_panel(
+                fixture, gold, answer, f"judge-calibration-{variant}", trial,
+                require_majority=False, lenient=True, skip_inventions=variant != "unsupported",
+            )
+            for judge, judgment in result["judgments"].items():
+                grades = {fact["id"]: fact["grade"] for fact in judgment["facts"]}
+                metrics[judge][variant] = {
+                    "counts": judgment_counts(judgment),
+                    "changed_grade": grades.get(changed_id),
+                }
             for judge, error in result["judge_errors"].items():
-                seat_pass[judge] = False
-                seat_failures[judge].append(f"{variant}: {error}")
+                metrics[judge][variant] = {"error": error}
             all_rows.append(
                 {
                     "fixture": fixture.name,
                     "variant": variant,
-                    "expected": expected,
                     "panel_counts": result["counts"],
-                    "seat_counts": seat_counts,
+                    "seat_metrics": metrics,
                     "judge_errors": result["judge_errors"],
                     "judge_notes": result["judge_notes"],
                 }
             )
-        eligible = sorted(judge for judge, passed in seat_pass.items() if passed)
+        eligible = []
+        seat_failures: dict[str, list[str]] = {model_id: [] for _, model_id in JUDGE_PANEL}
+        for model_id, measured in metrics.items():
+            failures = seat_failures[model_id]
+            gold_retained = measured.get("gold", {}).get("counts", {}).get("retained", 0)
+            offtopic_retained = measured.get("offtopic", {}).get("counts", {}).get("retained", 0)
+            gap = (gold_retained - offtopic_retained) / FACTS_PER_FIXTURE
+            if gap <= JUDGE_CALIBRATION_GAP:
+                failures.append(f"retention gap {gap:+.2f} (gold {gold_retained}, offtopic {offtopic_retained})")
+            if measured.get("paraphrased", {}).get("changed_grade") != "retained":
+                failures.append(f"paraphrased fact graded {measured.get('paraphrased', {}).get('changed_grade')!r}")
+            if measured.get("distorted", {}).get("changed_grade") not in {"distorted", "missing"}:
+                failures.append(f"distorted fact graded {measured.get('distorted', {}).get('changed_grade')!r}")
+            unsupported_metrics = measured.get("unsupported", {})
+            if unsupported_metrics.get("error") or unsupported_metrics.get("counts", {}).get("invented", 0) < 1:
+                failures.append(f"unsupported invention not caught: {unsupported_metrics}")
+            elif unsupported_metrics.get("counts", {}).get("retained", 0) > 1:
+                failures.append(f"unsupported retained {unsupported_metrics['counts']['retained']} facts")
+            if any("error" in (measured.get(variant) or {}) for variant in variants):
+                failures.append("seat errored on a calibration variant")
+            if not failures:
+                eligible.append(model_id)
         if len(eligible) < 4:
             raise BenchmarkError(f"{fixture.name}: only {len(eligible)} judges passed calibration: {seat_failures}")
         fixture_rows.append(
@@ -1343,8 +1428,9 @@ def calibrate_judges(fixtures: list[Fixture], trial: int) -> dict[str, Any]:
                 "fixture": fixture.name,
                 "source_sha256": fixture.source_hash,
                 "gold_sha256": sha256(fixture.directory / "gold.json"),
-                "eligible_judges": eligible,
+                "eligible_judges": sorted(eligible),
                 "seat_failures": seat_failures,
+                "seat_metrics": metrics,
                 "passed": True,
             }
         )
@@ -1353,6 +1439,7 @@ def calibrate_judges(fixtures: list[Fixture], trial: int) -> dict[str, Any]:
         "panel_id": judge_panel_id(),
         "panel": [model_id for _, model_id in JUDGE_PANEL],
         "rubric_version": JUDGE_RUBRIC_VERSION,
+        "gap_threshold": JUDGE_CALIBRATION_GAP,
         "fixtures": fixture_rows,
         "rows": all_rows,
     }
