@@ -1498,16 +1498,27 @@ def calibrate_judges(fixtures: list[Fixture], trial: int) -> dict[str, Any]:
                 "passed": True,
             }
         )
+    # Merge into any existing report: replace rows for recalibrated fixtures, keep the rest,
+    # so per-fixture runs accumulate instead of clobbering each other. (claude)
+    report_path = OUTPUTS / "validation" / "judge-calibration.json"
+    recalibrated = {row["fixture"] for row in fixture_rows}
+    prior_fixtures: list[dict[str, Any]] = []
+    prior_rows: list[dict[str, Any]] = []
+    if report_path.is_file():
+        prior = json.loads(report_path.read_text())
+        if prior.get("panel_id") == judge_panel_id() and prior.get("rubric_version") == JUDGE_RUBRIC_VERSION:
+            prior_fixtures = [r for r in prior.get("fixtures", []) if r["fixture"] not in recalibrated]
+            prior_rows = [r for r in prior.get("rows", []) if r.get("fixture") not in recalibrated]
     report = {
         "producer": f"uv run python scripts/benchmark.py calibrate-judges --trial {trial}",
         "panel_id": judge_panel_id(),
         "panel": [model_id for _, model_id in JUDGE_PANEL],
         "rubric_version": JUDGE_RUBRIC_VERSION,
         "gap_threshold": JUDGE_CALIBRATION_GAP,
-        "fixtures": fixture_rows,
-        "rows": all_rows,
+        "fixtures": prior_fixtures + fixture_rows,
+        "rows": prior_rows + all_rows,
     }
-    write_json(OUTPUTS / "validation" / "judge-calibration.json", report)
+    write_json(report_path, report)
     return report
 
 
