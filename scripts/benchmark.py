@@ -31,6 +31,7 @@ MODEL_PROVIDER = "openrouter"
 MODEL_ID = "deepseek/deepseek-v4-flash"
 THINKING_LEVEL = "high"
 FACTS_PER_FIXTURE = 20
+TRIALS = (1, 2, 3)
 
 
 class BenchmarkError(RuntimeError):
@@ -514,15 +515,15 @@ def load_gold(fixture: Fixture) -> dict[str, Any]:
     return gold
 
 
-def run_baseline(fixture: Fixture) -> Path:
+def run_baseline(fixture: Fixture, trial: int) -> Path:
     fixture.assert_unchanged()
     gold = load_gold(fixture)
-    work = RUNS / fixture.name / "uncompacted-baseline"
+    work = RUNS / fixture.name / "uncompacted-baseline" / f"trial-{trial:02d}"
     session = work / "session.jsonl"
     copy_source(fixture, session)
     agent_dir = isolated_agent_dir(work / "agent")
-    artifacts = OUTPUTS / fixture.name / "uncompacted-baseline"
-    write_json(artifacts / "run.json", {"fixture": fixture.name, "source_sha256": fixture.source_hash, "command": pi_command(session), "gold_sha256": sha256(fixture.directory / "gold.json")})
+    artifacts = OUTPUTS / fixture.name / "uncompacted-baseline" / f"trial-{trial:02d}"
+    write_json(artifacts / "run.json", {"fixture": fixture.name, "trial": trial, "source_sha256": fixture.source_hash, "command": pi_command(session), "gold_sha256": sha256(fixture.directory / "gold.json")})
     rpc = start_pi(session, agent_dir, artifacts)
     try:
         rpc.command("prompt", message=recall_prompt(gold), timeout=60)
@@ -537,7 +538,7 @@ def run_baseline(fixture: Fixture) -> Path:
     if any(entry.get("type") == "compaction" for entry in entries):
         raise BenchmarkError(f"{fixture.name}: uncompressed baseline unexpectedly compacted")
     answer_path = work / "answer.json"
-    write_json(answer_path, {"fixture": fixture.name, "source_sha256": fixture.source_hash, "answer": answer, "session_stats": stats})
+    write_json(answer_path, {"fixture": fixture.name, "trial": trial, "source_sha256": fixture.source_hash, "answer": answer, "session_stats": stats})
     fixture.assert_unchanged()
     return answer_path
 
@@ -557,20 +558,20 @@ def grade_prompt(gold: dict[str, Any], answer: str) -> str:
     )
 
 
-def grade_baseline(fixture: Fixture) -> Path:
+def grade_baseline(fixture: Fixture, trial: int) -> Path:
     gold = load_gold(fixture)
-    answer_path = RUNS / fixture.name / "uncompacted-baseline" / "answer.json"
+    answer_path = RUNS / fixture.name / "uncompacted-baseline" / f"trial-{trial:02d}" / "answer.json"
     if not answer_path.is_file():
         raise BenchmarkError(f"{fixture.name}: run baseline first")
     answer = json.loads(answer_path.read_text())["answer"]
-    work = EVALUATORS / fixture.name / "baseline-grade"
+    work = EVALUATORS / fixture.name / "baseline-grade" / f"trial-{trial:02d}"
     session = work / "session.jsonl"
     # worker: a source-loaded evaluator identifies claims unsupported by the fixture.
     # worker: the prompt hides the target method and fixture name.
     copy_source(fixture, session)
     grader_source_hash = sha256(session)
     agent_dir = isolated_agent_dir(work / "agent")
-    artifacts = OUTPUTS / fixture.name / "baseline-grade"
+    artifacts = OUTPUTS / fixture.name / "baseline-grade" / f"trial-{trial:02d}"
     rpc = start_pi(session, agent_dir, artifacts)
     try:
         rpc.command("prompt", message=grade_prompt(gold, answer), timeout=60)
@@ -588,8 +589,8 @@ def grade_baseline(fixture: Fixture) -> Path:
         raise BenchmarkError(f"{fixture.name}: invalid blind-grade result")
     counts = {grade_name: sum(fact["grade"] == grade_name for fact in facts) for grade_name in ("retained", "distorted", "missing")}
     counts["invented"] = len(grade.get("invented_claims", [])) if isinstance(grade.get("invented_claims", []), list) else 0
-    result = {"fixture": fixture.name, "source_sha256": fixture.source_hash, "grader_source_sha256": grader_source_hash, "counts": counts, "facts": facts, "invented_claims": grade.get("invented_claims", [])}
-    result_path = RUNS / fixture.name / "uncompacted-baseline" / "grade.json"
+    result = {"fixture": fixture.name, "trial": trial, "source_sha256": fixture.source_hash, "grader_source_sha256": grader_source_hash, "counts": counts, "facts": facts, "invented_claims": grade.get("invented_claims", [])}
+    result_path = RUNS / fixture.name / "uncompacted-baseline" / f"trial-{trial:02d}" / "grade.json"
     write_json(result_path, result)
     if counts["retained"] <= FACTS_PER_FIXTURE * 0.9:
         raise BenchmarkError(f"{fixture.name}: baseline retained {counts['retained']}/{FACTS_PER_FIXTURE}, not above 90%")
@@ -604,17 +605,24 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("command", choices=("gold", "baseline", "grade", "goal1"))
     parser.add_argument("fixtures", nargs="*", help="fixture names; default: all")
+    parser.add_argument("--trial", type=int, choices=TRIALS, help="run one trial instead of all three")
     args = parser.parse_args()
     names = args.fixtures or fixture_names()
     for name in names:
         if name not in fixture_names():
             raise BenchmarkError(f"unknown fixture {name!r}")
-    actions = {"gold": (generate_gold,), "baseline": (run_baseline,), "grade": (grade_baseline,), "goal1": (generate_gold, run_baseline, grade_baseline)}[args.command]
-    for name in names:
-        fixture = Fixture.load(name)
-        for action in actions:
-            result = action(fixture)
-            print(result)
+    fixtures = [Fixture.load(name) for name in names]
+    if args.command in {"gold", "goal1"}:
+        for fixture in fixtures:
+            print(generate_gold(fixture))
+    if args.command in {"baseline", "goal1"}:
+        for trial in (args.trial,) if args.trial else TRIALS:
+            for fixture in fixtures:
+                print(run_baseline(fixture, trial))
+    if args.command in {"grade", "goal1"}:
+        for trial in (args.trial,) if args.trial else TRIALS:
+            for fixture in fixtures:
+                print(grade_baseline(fixture, trial))
 
 
 if __name__ == "__main__":
