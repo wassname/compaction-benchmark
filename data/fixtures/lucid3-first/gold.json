@@ -182,8 +182,8 @@
     },
     {
       "id": "fact-11",
-      "question": "What four stages does the oracle recommend for the LUCID3 evidence program?",
-      "gold_answer": "future residual prediction, learned causal read/write intervention, autonomous action-conditioned latent rollout, maze planning with disabling ablations, plus measurement integrity",
+      "question": "What are the four stages of the 'strongest minimal paper arc' the oracle recommends for LUCID3?",
+      "gold_answer": "future residual prediction, learned causal read/write intervention, autonomous action-conditioned latent rollout, maze planning with disabling ablations",
       "source_entry_id": "04c9df35",
       "source_entry_index": 67,
       "evidence_quote": "The strongest minimal paper arc is:\n\n1. future residual prediction;\n2. learned causal read/write intervention;\n3. autonomous action-conditioned latent rollout;\n4. maze planning with disabling ablations.",
@@ -194,7 +194,7 @@
         "evidence_supports_gold": true,
         "question_matches_gold": true,
         "tail_leakage_review": "not_applicable_tail_control",
-        "note": "Retained-tail control; leakage review does not apply."
+        "note": "Retained-tail control; leakage review does not apply. 2026-08-30 re-review (pi/claude): question now names the 'strongest minimal paper arc' because source entry 67 also contains an evidence-ladder table and a 'minimal staged evidence program' section (Stage 0 measurement integrity); the old generic wording let the answer model pick the staged program. Dropped 'plus measurement integrity' from the gold answer: that clause belongs to the staged program, not the arc; the arc evidence lists exactly four stages."
       }
     },
     {
