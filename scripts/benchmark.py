@@ -850,6 +850,7 @@ def validate_method_run(fixture: Fixture, method_name: str, trial: int) -> dict[
     if answer["compaction_sha256"] != sha256(compact_path):
         raise BenchmarkError(f"{fixture.name}/{method_name}: answer references another compaction")
     validate_compaction_handler(fixture, method_name, method, compact["entry"], artifacts / "compact" / "stderr.log")
+    assert_source_prefix_intact(fixture, work / "session.jsonl")
     entries = [json.loads(line) for line in (work / "session.jsonl").read_text().splitlines()]
     compaction_index = next((index for index, entry in enumerate(entries) if entry.get("id") == compact["entry"]["id"]), None)
     if compaction_index is None or any(entry_uses_tool(entry) for entry in entries[compaction_index + 1 :]):
