@@ -428,8 +428,12 @@ def generate_gold_stratum(fixture: Fixture, region: str) -> list[dict[str, Any]]
     work = EVALUATORS / fixture.name / "gold" / region
     session = work / "session.jsonl"
     write_stratum_session(fixture, region, session)
-    agent_dir = isolated_agent_dir(work / "agent")
     artifacts = OUTPUTS / fixture.name / "gold" / region
+    curated = artifacts / "curated-answer.json"
+    if curated.is_file():
+        return validate_gold(fixture, json.loads(curated.read_text()), region)
+
+    agent_dir = isolated_agent_dir(work / "agent")
     write_json(artifacts / "run.json", {"fixture": fixture.name, "region": region, "source_sha256": fixture.source_hash, "command": pi_command(session)})
     rpc = start_pi(session, agent_dir, artifacts)
     try:
