@@ -64,7 +64,7 @@
     {
       "id": "fact-04",
       "question": "What per-coordinate shrink weight and variance estimate does the VJP shrink estimator use?",
-      "gold_answer": "max(0, 1 - sigma^2/mu^2), using the standard deviation between pairs rather than the paired standard error.",
+      "gold_answer": "max(0, 1 - sigma^2/mu^2), with sigma^2 the between-pair variance (sigma the std between pairs), rather than the paired standard error.",
       "source_entry_id": "cad3f4e3",
       "source_entry_index": 132,
       "evidence_quote": "# unstable across pairs. \"shrink\" scales each coordinate by max(0, 1 - sigma^2/mu^2) using\n    # the std BETWEEN pairs, and then SKIPS the per-layer unit_vector, so a layer keeps only\n    # the dose its reliability earned and the whole vector is normalised once at the end.\n    # sigma and not sigma/sqrt(n), or the weight would go to 1 as pairs are added.",
