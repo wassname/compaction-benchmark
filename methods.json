@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "pi_version": "0.84.4",
+  "methods": {
+    "pi-default": {
+      "classification": "comparable",
+      "protocol": "manual_rpc_compact",
+      "extension": null,
+      "mechanism": "Pi native LLM summary",
+      "expected_compaction": {
+        "from_hook": false,
+        "details_keys": ["readFiles", "modifiedFiles"]
+      }
+    },
+    "pi-blackhole": {
+      "classification": "comparable-cold-load",
+      "protocol": "manual_rpc_compact",
+      "extension": "pi-blackhole@0.4.10",
+      "source_url": "https://github.com/k0valik/pi-blackhole",
+      "npm_integrity": "sha512-19NvAUBHiZLrOWzsb77md62YojkhU4Vzd6ziSE+wG4zd/fVS7SsDpflbojtOwP2s2Qa3HCRnfII8Zu4Ae3Slgw==",
+      "mechanism": "extension-provided structural summary; observational memory is cold-loaded",
+      "expected_compaction": {
+        "from_hook": true,
+        "details_match": {"compactor": "blackhole"}
+      }
+    },
+    "pi-smart-compact": {
+      "classification": "comparable",
+      "protocol": "manual_rpc_compact",
+      "extension": "pi-smart-compact@9.5.0",
+      "source_url": "https://github.com/alpertarhan/pi-smart-compact",
+      "npm_integrity": "sha512-Xy2DvexLKQlVH01jqrTq/Sw+Eiiqj5fgS6ufAgFl0p/n0d3NUjJNb1sFnrkD77XrKWXb43nT/cA/oWqTGmCmRQ==",
+      "mechanism": "extension-provided extraction, synthesis, and verification",
+      "settings": {
+        "smartCompact": {
+          "autoTrigger": true,
+          "autoTriggerStrategy": "native-hook",
+          "minContextPercent": 1,
+          "requireApproval": false,
+          "backupEnabled": false,
+          "agentToolAccess": "disabled"
+        }
+      },
+      "expected_compaction": {
+        "from_hook": true,
+        "details_keys": ["runId", "method", "model", "verified"]
+      }
+    },
+    "context-fold": {
+      "classification": "comparable-cold-load",
+      "protocol": "manual_rpc_compact",
+      "extension": "context-fold@0.3.2",
+      "source_url": "https://github.com/Middlewatch/context-fold",
+      "npm_integrity": "sha512-8ujuznkwEJsj8A0brZmhWhTxGOdZzLy1+kVY+/oKor1IZsHrWEZl7rnpb8LaKGgB6nUb+E8DbmP6BHOf0hI2NA==",
+      "mechanism": "extension-provided deterministic summary; recall spool is disabled during questions",
+      "expected_compaction": {
+        "from_hook": true,
+        "stderr_contains": "[context-fold] det compaction:"
+      }
+    },
+    "pi-cc-compact": {
+      "classification": "comparable",
+      "protocol": "manual_rpc_compact",
+      "extension": "pi-cc-compact@0.1.0",
+      "source_url": "https://github.com/pinion05/pi-cc-compact",
+      "npm_integrity": "sha512-sjHgFT0DS8/xUfAl90YEG57uaAD53CrOL3JkOzdw24oU/FAI6SBRQ3udS9Pv0aNP0bdAdbMSz9McmyXqMNC2wQ==",
+      "mechanism": "extension-provided nine-section Claude-derived prompt",
+      "expected_compaction": {
+        "from_hook": true,
+        "details_match": {"source": "pi-cc-compact"}
+      }
+    },
+    "pi-context": {
+      "classification": "agent-driven-incomparable",
+      "protocol": "agent_tool_checkpoint",
+      "extension": "pi-context@2.1.2",
+      "source_url": "https://github.com/ttttmr/pi-context",
+      "npm_integrity": "sha512-96Fof0zUWgByY3eN7v8+CZL78y1/y+J3TjgC9YFDUfj/LzLp6s1eozG5lrBe/5XNAoMsZohCYyn4YoG7BjUsZg==",
+      "mechanism": "agent-authored checkpoint and continuation branch; it does not intercept manual RPC compact"
+    },
+    "model-aware-compaction": {
+      "classification": "trigger-policy-incomparable",
+      "protocol": "automatic_threshold",
+      "extension": "@pinet/model-aware-compaction@0.2.13",
+      "source_url": "https://github.com/gugu91/pinet",
+      "npm_integrity": "sha512-pML7HPIQ4bi54HDAfGUExqN/VLdpY3RmierUQIj0KpxwA7mQ3zisGglazH+fo61iM1dxVceoti+kGBu6zLVhPw==",
+      "mechanism": "model-dependent trigger policy; forced manual RPC compact uses Pi native summary"
+    },
+    "pi-custom-compaction": {
+      "classification": "controlled-comparison",
+      "protocol": "manual_rpc_compact",
+      "extension": "pi-custom-compaction@0.2.5",
+      "source_url": "https://github.com/nicobailon/pi-custom-compaction",
+      "npm_integrity": "sha512-00ZhXK76CtnM6BFn4TVOyVPCKDpOaXd1NZKJLul3dbqKG+ABO80rnN99cQTGOAS0KxAtjuwSARhjUYpR7SPPJA==",
+      "mechanism": "configured summary model, reasoning level, prompt template, and retention"
+    }
+  }
+}

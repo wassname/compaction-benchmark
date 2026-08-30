@@ -53,6 +53,85 @@ class FixtureTests(unittest.TestCase):
         self.assertTrue(benchmark.entry_uses_tool({"message": {"role": "toolResult", "content": []}}))
         self.assertFalse(benchmark.entry_uses_tool({"message": {"role": "assistant", "content": [{"type": "text"}]}}))
 
+    def test_panel_requires_numbered_citations_and_a_majority(self) -> None:
+        fixture = benchmark.Fixture("panel", Path("."), Path("source.jsonl"), {}, [], "", 0)
+        gold = {"facts": [{"id": f"fact-{i:02d}"} for i in range(1, 21)]}
+        answer = "\n".join(f"{i}. answer {i}" for i in range(1, 21))
+        facts = [
+            {"id": f"fact-{i:02d}", "grade": "retained", "candidate_lines": str(i), "reason": "same"}
+            for i in range(1, 21)
+        ]
+        judgment = {"facts": facts, "invented_claims": [], "judge_note": ""}
+        benchmark.validate_judgment(fixture, gold, answer, judgment)
+        judgments = {f"judge-{i}": judgment for i in range(5)}
+        result = benchmark.aggregate_judgments(fixture, gold, judgments)
+        self.assertEqual(result["counts"], {"retained": 20, "distorted": 0, "missing": 0, "invented": 0})
+        facts[0] = {"id": "fact-01", "grade": "retained", "candidate_lines": "2", "reason": "same"}
+        with self.assertRaisesRegex(benchmark.BenchmarkError, "numbered answer item"):
+            benchmark.validate_judgment(fixture, gold, answer, judgment)
+
+    def test_panel_rejects_malformed_facts_and_deduplicates_invention_votes(self) -> None:
+        fixture = benchmark.Fixture("panel", Path("."), Path("source.jsonl"), {}, [], "", 0)
+        gold = {"facts": [{"id": f"fact-{i:02d}"} for i in range(1, 21)]}
+        with self.assertRaisesRegex(benchmark.BenchmarkError, "fact objects"):
+            benchmark.validate_judgment(fixture, gold, "", {"facts": [None] * 20})
+        facts = [
+            {"id": f"fact-{i:02d}", "grade": "missing", "candidate_lines": "", "candidate_quote": "", "reason": "absent"}
+            for i in range(1, 21)
+        ]
+        judgments = {
+            "one": {"facts": facts, "invented_claims": [{"candidate_item": 1, "candidate_quote": "1. false"}] * 3, "judge_note": ""},
+            **{str(i): {"facts": facts, "invented_claims": [], "judge_note": ""} for i in range(2, 6)},
+        }
+        result = benchmark.aggregate_judgments(fixture, gold, judgments)
+        self.assertEqual(result["counts"]["invented"], 0)
+
+    def test_panel_rejects_two_two_one_vote(self) -> None:
+        fixture = benchmark.Fixture("panel", Path("."), Path("source.jsonl"), {}, [], "", 0)
+        gold = {"facts": [{"id": f"fact-{i:02d}"} for i in range(1, 21)]}
+        judgments = {}
+        labels = ["retained", "retained", "distorted", "distorted", "missing"]
+        for seat, label in enumerate(labels):
+            facts = [
+                {"id": f"fact-{i:02d}", "grade": label if i == 1 else "retained"}
+                for i in range(1, 21)
+            ]
+            judgments[str(seat)] = {"facts": facts, "invented_claims": [], "judge_note": ""}
+        with self.assertRaisesRegex(benchmark.BenchmarkError, "no majority"):
+            benchmark.aggregate_judgments(fixture, gold, judgments)
+
+    def test_judge_uses_fresh_session_and_model_output_override(self) -> None:
+        fixture = benchmark.Fixture.load("lucid-aug20")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            session = root / "session.jsonl"
+            benchmark.write_fresh_evaluator_session(fixture, session)
+            self.assertEqual(len(session.read_text().splitlines()), 1)
+            benchmark.write_json(
+                root / "models-store.json",
+                {"openrouter": {"models": [{"id": "judge", "maxTokens": 100000}]}},
+            )
+            benchmark.cap_model_output(root, "openrouter", "judge", 8192)
+            override = json.loads((root / "models.json").read_text())
+            self.assertEqual(override["providers"]["openrouter"]["modelOverrides"]["judge"]["maxTokens"], 8192)
+
+    def test_method_manifest_and_extension_command_are_pinned(self) -> None:
+        methods = benchmark.load_methods()
+        self.assertEqual(methods["pi-context"]["classification"], "agent-driven-incomparable")
+        command = benchmark.pi_command(Path("session.jsonl"), extension="pi-cc-compact@0.1.0")
+        self.assertEqual(command[-2:], ["-e", "npm:pi-cc-compact@0.1.0"])
+        with tempfile.TemporaryDirectory() as directory:
+            stderr = Path(directory) / "stderr.log"
+            stderr.write_text("")
+            fixture = benchmark.Fixture("fixture", Path("."), Path("source.jsonl"), {}, [], "", 0)
+            benchmark.validate_compaction_handler(
+                fixture,
+                "pi-default",
+                methods["pi-default"],
+                {"details": {"readFiles": [], "modifiedFiles": []}},
+                stderr,
+            )
+
     def test_restores_only_source_whitespace(self) -> None:
         source = "one line wraps\nhere exactly"
         self.assertEqual(
