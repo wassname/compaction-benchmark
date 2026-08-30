@@ -166,7 +166,7 @@
     {
       "id": "fact-10",
       "question": "What result would show that the current middle state already summarizes nearly all useful prefix information?",
-      "gold_answer": "The GRU would not beat the pointwise MLP.",
+      "gold_answer": "The GRU would not beat the pointwise MLP; equivalently, a nonlinear last-state model matches the GRU.",
       "source_entry_id": "8a19c34e",
       "source_entry_index": 11,
       "evidence_quote": "- The current middle state may already summarize nearly all useful prefix information; then the GRU should not beat the pointwise MLP.",
