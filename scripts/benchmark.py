@@ -64,6 +64,17 @@ def answer_values_are_evidenced(answer: str, quote: str) -> bool:
     return all(value in quote for value in re.findall(r"\d+(?:\.\d+)?", answer))
 
 
+def entry_uses_tool(entry: dict[str, Any]) -> bool:
+    message = entry.get("message") or {}
+    if message.get("role") == "toolResult":
+        return True
+    content = message.get("content")
+    return isinstance(content, list) and any(
+        isinstance(part, dict) and part.get("type") in {"toolCall", "toolResult"}
+        for part in content
+    )
+
+
 def exact_whitespace_variant(source: str, candidate: str) -> str | None:
     """Restore source line wrapping without accepting changed words. (claude)"""
     collapsed: list[str] = []
@@ -533,6 +544,7 @@ def run_baseline(fixture: Fixture, trial: int) -> Path:
     write_json(artifacts / "run.json", {"fixture": fixture.name, "trial": trial, "source_sha256": fixture.source_hash, "command": pi_command(session), "gold_sha256": sha256(fixture.directory / "gold.json")})
     rpc = start_pi(session, agent_dir, artifacts)
     try:
+        existing_ids = {entry.get("id") for entry in rpc.command("get_entries")["data"]["entries"]}
         rpc.command("prompt", message=recall_prompt(gold), timeout=60)
         rpc.wait_settled()
         answer = rpc.command("get_last_assistant_text")["data"]["text"]
@@ -544,6 +556,8 @@ def run_baseline(fixture: Fixture, trial: int) -> Path:
         raise BenchmarkError(f"{fixture.name}: baseline returned no assistant text")
     if any(entry.get("type") == "compaction" for entry in entries):
         raise BenchmarkError(f"{fixture.name}: uncompressed baseline unexpectedly compacted")
+    if any(entry_uses_tool(entry) for entry in entries if entry.get("id") not in existing_ids):
+        raise BenchmarkError(f"{fixture.name}: baseline answer used a tool")
     answer_path = work / "answer.json"
     write_json(answer_path, {"fixture": fixture.name, "trial": trial, "source_sha256": fixture.source_hash, "answer": answer, "session_stats": stats})
     fixture.assert_unchanged()

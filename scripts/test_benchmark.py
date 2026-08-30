@@ -48,6 +48,11 @@ class FixtureTests(unittest.TestCase):
             {"facts": []},
         )
 
+    def test_detects_tool_calls_and_results(self) -> None:
+        self.assertTrue(benchmark.entry_uses_tool({"message": {"role": "assistant", "content": [{"type": "toolCall"}]}}))
+        self.assertTrue(benchmark.entry_uses_tool({"message": {"role": "toolResult", "content": []}}))
+        self.assertFalse(benchmark.entry_uses_tool({"message": {"role": "assistant", "content": [{"type": "text"}]}}))
+
     def test_restores_only_source_whitespace(self) -> None:
         source = "one line wraps\nhere exactly"
         self.assertEqual(
