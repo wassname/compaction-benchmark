@@ -328,6 +328,36 @@ def copy_source(fixture: Fixture, path: Path) -> None:
         raise BenchmarkError(f"{fixture.name}: copied session hash does not match source")
 
 
+def assert_source_prefix_intact(fixture: Fixture, session_path: Path) -> None:
+    """A compaction extension must not rewrite or drop the historical entries. (claude)
+
+    The original entries are byte-identical after a native compaction, so parsed equality holds.
+    """
+    entries = [json.loads(line) for line in session_path.read_text().splitlines() if line.strip()]
+    if len(entries) < len(fixture.entries) + 1 or entries[: len(fixture.entries)] != fixture.entries:
+        raise BenchmarkError(f"{fixture.name}: compaction mutated the source prefix")
+    appended = entries[len(fixture.entries):]
+    if sum(1 for entry in appended if entry.get("type") == "compaction") != 1:
+        raise BenchmarkError(f"{fixture.name}: expected exactly one appended compaction entry")
+
+
+def measure_pi_version() -> str:
+    result = subprocess.run(["pi", "--version"], capture_output=True, text=True, timeout=30)
+    if result.returncode != 0:
+        raise BenchmarkError(f"pi --version failed: {result.stderr.strip()}")
+    match = re.search(r"\d+\.\d+\.\d+", result.stdout + result.stderr)
+    if not match:
+        raise BenchmarkError(f"pi --version gave no version: {result.stdout!r}")
+    return match.group(0)
+
+
+def measure_npm_integrity(extension: str) -> str:
+    result = subprocess.run(["npm", "view", extension, "dist.integrity"], capture_output=True, text=True, timeout=90)
+    if result.returncode != 0:
+        raise BenchmarkError(f"npm view {extension} failed: {result.stderr.strip()}")
+    return result.stdout.strip()
+
+
 def write_fresh_evaluator_session(fixture: Fixture, path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     header = fixture.entries[0]
@@ -671,16 +701,28 @@ def run_compaction_method(fixture: Fixture, method_name: str, trial: int) -> Pat
     method = methods[method_name]
     if not method["classification"].startswith("comparable"):
         raise BenchmarkError(f"{method_name}: {method['classification']} is not a comparable manual compaction method")
+    # Measure runtime provenance rather than assert it (claude, review P1).
+    manifest = json.loads(METHODS_PATH.read_text())
+    measured_pi_version = measure_pi_version()
+    if measured_pi_version != manifest["pi_version"]:
+        raise BenchmarkError(f"pi version {measured_pi_version} != methods.json {manifest['pi_version']}")
+    extension = method["extension"]
+    measured_integrity = measure_npm_integrity(extension) if extension else None
+    if extension and method.get("npm_integrity") and measured_integrity != method["npm_integrity"]:
+        raise BenchmarkError(f"{method_name}: npm integrity {measured_integrity} != methods.json {method['npm_integrity']}")
     gold = load_gold(fixture)
     work = RUNS / fixture.name / method_name / f"trial-{trial:02d}"
     artifacts = OUTPUTS / fixture.name / method_name / f"trial-{trial:02d}"
+    # A rerun replaces this method's artifacts, so the cross-method Goal 2 report is now stale. (claude)
+    stale_report = OUTPUTS / "validation" / "goal2-validation.json"
+    if stale_report.exists():
+        stale_report.unlink()
     for path in (work, artifacts):
         if path.exists():
             shutil.rmtree(path)
     session = work / "session.jsonl"
     copy_source(fixture, session)
     compact_artifacts = artifacts / "compact"
-    extension = method["extension"]
     compact_command = pi_command(session, extension=extension)
     write_json(
         artifacts / "run.json",
@@ -694,6 +736,8 @@ def run_compaction_method(fixture: Fixture, method_name: str, trial: int) -> Pat
             "method_spec": method,
             "compact_command": compact_command,
             "answer_command": pi_command(session),
+            "measured_pi_version": measured_pi_version,
+            "measured_npm_integrity": measured_integrity,
         },
     )
     source_ids = {entry.get("id") for entry in fixture.entries}
@@ -777,6 +821,7 @@ def run_compaction_method(fixture: Fixture, method_name: str, trial: int) -> Pat
             "session_stats": answer_stats,
         },
     )
+    assert_source_prefix_intact(fixture, session)
     fixture.assert_unchanged()
     return answer_path
 
@@ -794,6 +839,14 @@ def validate_method_run(fixture: Fixture, method_name: str, trial: int) -> dict[
         raise BenchmarkError(f"{fixture.name}/{method_name}: validation source hash mismatch")
     if run["gold_sha256"] != sha256(fixture.directory / "gold.json") or run["methods_sha256"] != sha256(METHODS_PATH):
         raise BenchmarkError(f"{fixture.name}/{method_name}: validation manifest hash mismatch")
+    # Embedded identities and exact commands, so a copied trial-1 directory cannot pass as trial 2. (claude, review P1)
+    for label, record in (("run", run), ("compaction", compact), ("answer", answer)):
+        if record.get("fixture") != fixture.name or record.get("method") != method_name or record.get("trial") != trial:
+            raise BenchmarkError(f"{fixture.name}/{method_name}: {label} record has wrong fixture/method/trial")
+    expected_compact_command = pi_command(work / "session.jsonl", extension=method["extension"])
+    expected_answer_command = pi_command(work / "session.jsonl")
+    if run["compact_command"] != expected_compact_command or run["answer_command"] != expected_answer_command:
+        raise BenchmarkError(f"{fixture.name}/{method_name}: validation command mismatch")
     if answer["compaction_sha256"] != sha256(compact_path):
         raise BenchmarkError(f"{fixture.name}/{method_name}: answer references another compaction")
     validate_compaction_handler(fixture, method_name, method, compact["entry"], artifacts / "compact" / "stderr.log")
@@ -943,8 +996,8 @@ def validate_fact_judgment(fixture: Fixture, gold: dict[str, Any], answer: str, 
         if label != "missing" and (not quote.strip() or owners != {expected_owner}):
             raise BenchmarkError(f"{fixture.name}: credited grade lacks a citation to its numbered answer item")
         fact["candidate_quote"] = quote
-    if not isinstance(judgment.get("judge_note"), str):
-        raise BenchmarkError(f"{fixture.name}: fact grader omitted judge_note")
+    # judge_note is unscored friction; models return null, so coerce to empty. (claude)
+    judgment["judge_note"] = judgment.get("judge_note") if isinstance(judgment.get("judge_note"), str) else ""
     return judgment
 
 
@@ -973,8 +1026,7 @@ def validate_fact_judgment_lenient(fixture: Fixture, gold: dict[str, Any], answe
             line_spec = ""
         quote, owners = cited_candidate_lines(answer, line_spec) if line_spec.strip() else ("", set())
         fact["candidate_quote"] = quote
-    if not isinstance(judgment.get("judge_note"), str):
-        raise BenchmarkError(f"{fixture.name}: fact grader omitted judge_note")
+    judgment["judge_note"] = judgment.get("judge_note") if isinstance(judgment.get("judge_note"), str) else ""
     return judgment
 
 
@@ -995,8 +1047,7 @@ def validate_invention_judgment(fixture: Fixture, answer: str, judgment: dict[st
         claim["candidate_item"] = next(iter(owners))
         claim["candidate_quote"] = quote
     judgment["invented_claims"] = list({claim["candidate_item"]: claim for claim in invented}.values())
-    if not isinstance(judgment.get("judge_note"), str):
-        raise BenchmarkError(f"{fixture.name}: invention grader omitted judge_note")
+    judgment["judge_note"] = judgment.get("judge_note") if isinstance(judgment.get("judge_note"), str) else ""
     return judgment
 
 
@@ -1211,6 +1262,8 @@ def grade_answer_panel(
             "gold_sha256": sha256(fixture.directory / "gold.json"),
             "panel_id": judge_panel_id(),
             "judge_panel": [model_id for _, model_id in JUDGE_PANEL],
+            "selected_judges": [model_id for _, model_id in selected],
+            "successful_judges": sorted(judgments),
             "judgments": judgments,
             "judge_errors": judge_errors,
         }
@@ -1218,7 +1271,8 @@ def grade_answer_panel(
     return result
 
 
-def require_judge_calibration(fixture: Fixture) -> set[str]:
+def require_judge_calibration(fixture: Fixture) -> tuple[set[str], str]:
+    """Return the eligible seat subset and a calibration_id binding grades to it. (claude, review P1)"""
     path = OUTPUTS / "validation" / "judge-calibration.json"
     if not path.is_file():
         raise BenchmarkError("Run calibrate-judges before grading")
@@ -1232,17 +1286,22 @@ def require_judge_calibration(fixture: Fixture) -> set[str]:
     ]
     if report.get("panel_id") != judge_panel_id() or len(matching) != 1:
         raise BenchmarkError(f"{fixture.name}: current judge panel lacks matching calibration")
-    return set(matching[0]["eligible_judges"])
+    row = matching[0]
+    calibration_id = hashlib.sha256(
+        json.dumps({"panel_id": report["panel_id"], "fixture_row": row}, sort_keys=True).encode()
+    ).hexdigest()
+    return set(row["eligible_judges"]), calibration_id
 
 
 def grade_baseline(fixture: Fixture, trial: int) -> Path:
     gold = load_gold(fixture)
-    eligible_judges = require_judge_calibration(fixture)
+    eligible_judges, calibration_id = require_judge_calibration(fixture)
     answer_path = RUNS / fixture.name / "uncompacted-baseline" / f"trial-{trial:02d}" / "answer.json"
     if not answer_path.is_file():
         raise BenchmarkError(f"{fixture.name}: run baseline first")
     answer = json.loads(answer_path.read_text())["answer"]
     result = grade_answer_panel(fixture, gold, answer, "baseline-grade", trial, eligible_judges)
+    result["calibration_id"] = calibration_id
     result_path = RUNS / fixture.name / "uncompacted-baseline" / f"trial-{trial:02d}" / "grade.json"
     write_json(result_path, result)
     if result["counts"]["retained"] <= FACTS_PER_FIXTURE * 0.9:
@@ -1351,10 +1410,13 @@ def calibrate_judges(fixtures: list[Fixture], trial: int) -> dict[str, Any]:
     has a gap of zero and drops out. Paraphrase, distortion, and invention anchors check the one
     changed fact specifically.
     """
+    # The off-topic anchor is another fixture's gold answers, so a content-matching judge cannot
+    # retain it the way it retained a within-fixture shifted answer. (claude, ml-bench off-topic)
+    all_gold = {name: load_gold(Fixture.load(name)) for name in fixture_names()}
     fixture_rows = []
     all_rows = []
     for fixture in fixtures:
-        gold = load_gold(fixture)
+        gold = all_gold[fixture.name]
         change = CALIBRATION_CHANGES[fixture.name]
         change_index = change["item"] - 1
         changed_id = f"fact-{change['item']:02d}"
@@ -1365,7 +1427,8 @@ def calibrate_judges(fixtures: list[Fixture], trial: int) -> dict[str, Any]:
             out[index] = text
             return out
 
-        off_topic = answers[1:] + answers[:1]
+        off_fixture = next(name for name in sorted(all_gold) if name != fixture.name)
+        off_topic = [fact["gold_answer"] for fact in all_gold[off_fixture]["facts"]]
         unsupported = [""] * len(answers)
         unsupported[0] = "The source establishes that the Moon is made entirely of cheddar cheese."
         variants = {
