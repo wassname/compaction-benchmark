@@ -183,18 +183,18 @@
     {
       "id": "fact-11",
       "question": "What remains before the dev3 method ports count as finished?",
-      "gold_answer": "Descending full-cohort runs must be output-audited and export a result CSV, then be judged and committed as a table and plot.",
-      "source_entry_id": "8709206c",
-      "source_entry_index": 404,
-      "evidence_quote": "The `dev3` branch has both method ports and real-model smoke results. The work remains open until descending full-cohort runs are judged and render a committed table and plot.",
-      "model_evidence_candidate": "The `dev3` branch has both method ports and real-model smoke results. The work remains open until descending full-cohort runs are judged and render a committed table and plot.",
+      "gold_answer": "Full descending walks with a raw output audit, judge results, and a generated table, plot, and dev3 commits.",
+      "source_entry_id": "8ebc27d2",
+      "source_entry_index": 401,
+      "evidence_quote": "It now requires the full descending walks, raw output audit, judge results, generated table, plot, and `dev3` commits.",
+      "model_evidence_candidate": "It now requires the full descending walks, raw output audit, judge results, generated table, plot, and `dev3` commits.",
       "source_region": "retained_tail_control",
       "manual_review": {
         "reviewer": "claude",
         "evidence_supports_gold": true,
         "question_matches_gold": true,
         "tail_leakage_review": "not_applicable_tail_control",
-        "note": "Retained-tail control; leakage review does not apply."
+        "note": "Re-anchored 2026-08-30 (claude): the prior span (entry 404) did not contain the 'output-audited and export a result CSV' clauses added by the earlier widening; 'result CSV' appears only in entries 140/142, a mid-session deliverable list. Re-anchored to entry 401's contiguous enumeration, which the question's 'count as finished' framing points at; 401 lies inside the retained tail (bracketed by tail controls at 388/404)."
       }
     },
     {
@@ -284,7 +284,7 @@
     },
     {
       "id": "fact-17",
-      "question": "What blocked the full Modal walks after the smoke tests?",
+      "question": "After the smoke tests, what actually blocked the full Modal walks, and what was explicitly ruled out as the cause?",
       "gold_answer": "The unfinished boundary-walk refactor, not Modal runtime.",
       "source_entry_id": "21a071e4",
       "source_entry_index": 388,
@@ -296,7 +296,7 @@
         "evidence_supports_gold": true,
         "question_matches_gold": true,
         "tail_leakage_review": "not_applicable_tail_control",
-        "note": "Retained-tail control; leakage review does not apply."
+        "note": "Question sharpened 2026-08-30 (claude): the prior wording let the confession clause ('I stopped after the implementation smokes ...') grade as responsive — 0v4 distorted plus a 3-judge invented call on a near-verbatim source paraphrase. The item's point is the correction (the refactor, not Modal runtime), so the question now asks for the blocker and the ruled-out cause."
       }
     },
     {
