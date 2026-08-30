@@ -1,0 +1,354 @@
+{
+  "schema_version": 2,
+  "fixture": "jsteer-publication",
+  "source_sha256": "08f1ccb892f4c6cbbfeea2c2d86a74c98b643f1fb2c80a4b157b0c910b636efb",
+  "historical_source_sha256": "ef83a549a4fdb37ddd051da70f1a1bb782d8558658d00df1d2565e4773e34486",
+  "first_kept_entry_id": "5bfe86b8",
+  "first_kept_entry_index": 380,
+  "regions": {
+    "pre_first_kept": 10,
+    "retained_tail_control": 10
+  },
+  "facts": [
+    {
+      "id": "fact-01",
+      "question": "What exact command ran the Modal smoke for the new methods?",
+      "gold_answer": "uv run modal run scripts/run_modal.py::smoke",
+      "source_entry_id": "537d99e4",
+      "source_entry_index": 368,
+      "evidence_quote": "uv run modal run scripts/run_modal.py::smoke",
+      "model_evidence_candidate": "uv run modal run scripts/run_modal.py::smoke",
+      "source_region": "pre_first_kept",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_restated_in_retained_tail",
+        "note": "Reviewed against entries 380 onward; this exact result or implementation detail is not restated in the retained tail."
+      }
+    },
+    {
+      "id": "fact-02",
+      "question": "What was the first dev3 commit hash and message, and how large was its README change?",
+      "gold_answer": "48c946f, \u201cFix README score equation rendering\u201d; 4 insertions and 2 deletions.",
+      "source_entry_id": "04dec0ca",
+      "source_entry_index": 161,
+      "evidence_quote": "[dev3 48c946f] Fix README score equation rendering\n 1 file changed, 4 insertions(+), 2 deletions(-)",
+      "model_evidence_candidate": "[dev3 48c946f] Fix README score equation rendering\n 1 file changed, 4 insertions(+), 2 deletions(-)",
+      "source_region": "pre_first_kept",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_restated_in_retained_tail",
+        "note": "Reviewed against entries 380 onward; this exact result or implementation detail is not restated in the retained tail."
+      }
+    },
+    {
+      "id": "fact-03",
+      "question": "How is the VJP shrink vector normalized after per-coordinate shrinkage?",
+      "gold_answer": "The whole vector is normalized once at the end, without per-layer unit-vector normalization.",
+      "source_entry_id": "cad3f4e3",
+      "source_entry_index": 132,
+      "evidence_quote": "# the std BETWEEN pairs, and then SKIPS the per-layer unit_vector, so a layer keeps only\n    # the dose its reliability earned and the whole vector is normalised once at the end.",
+      "model_evidence_candidate": "# the std BETWEEN pairs, and then SKIPS the per-layer unit_vector, so a layer keeps only\n    # the dose its reliability earned and the whole vector is normalised once at the end.",
+      "source_region": "pre_first_kept",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_restated_in_retained_tail",
+        "note": "Reviewed against entries 380 onward; this exact result or implementation detail is not restated in the retained tail."
+      }
+    },
+    {
+      "id": "fact-04",
+      "question": "What per-coordinate shrink weight and variance estimate does the VJP shrink estimator use?",
+      "gold_answer": "max(0, 1 - sigma^2/mu^2), using the standard deviation between pairs rather than the paired standard error.",
+      "source_entry_id": "cad3f4e3",
+      "source_entry_index": 132,
+      "evidence_quote": "# unstable across pairs. \"shrink\" scales each coordinate by max(0, 1 - sigma^2/mu^2) using\n    # the std BETWEEN pairs, and then SKIPS the per-layer unit_vector, so a layer keeps only\n    # the dose its reliability earned and the whole vector is normalised once at the end.\n    # sigma and not sigma/sqrt(n), or the weight would go to 1 as pairs are added.",
+      "model_evidence_candidate": "# unstable across pairs. \"shrink\" scales each coordinate by max(0, 1 - sigma^2/mu^2) using\n    # the std BETWEEN pairs, and then SKIPS the per-layer unit_vector, so a layer keeps only\n    # the dose its reliability earned and the whole vector is normalised once at the end.\n    # sigma and not sigma/sqrt(n), or the weight would go to 1 as pairs are added.",
+      "source_region": "pre_first_kept",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_restated_in_retained_tail",
+        "note": "Reviewed against entries 380 onward; this exact result or implementation detail is not restated in the retained tail."
+      }
+    },
+    {
+      "id": "fact-05",
+      "question": "Which cotangent words and lens prompt count did the Modal J-word smoke verify?",
+      "gold_answer": "sycophantic - abrasive, with n_prompts=1000.",
+      "source_entry_id": "eaec692b",
+      "source_entry_index": 367,
+      "evidence_quote": "The Modal smoke loaded the published Qwen3.5-4B Jacobian lens. Its log shows the required `sycophantic - abrasive` cotangent and `n_prompts=1000`.",
+      "model_evidence_candidate": "The Modal smoke loaded the published Qwen3.5-4B Jacobian lens. Its log shows the required `sycophantic - abrasive` cotangent and `n_prompts=1000`.",
+      "source_region": "pre_first_kept",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_restated_in_retained_tail",
+        "note": "Reviewed against entries 380 onward; this exact result or implementation detail is not restated in the retained tail."
+      }
+    },
+    {
+      "id": "fact-06",
+      "question": "What happened to J-word at C=1 in the two-item Modal smoke?",
+      "gold_answer": "+C generated empty output and -C repeated \u201cabrasive\u201d, so it was already incoherent.",
+      "source_entry_id": "eaec692b",
+      "source_entry_index": 367,
+      "evidence_quote": "At `C=1`, J-word was already incoherent on this two-item smoke: `+C` generated empty output and `-C` repeated \u201cabrasive\u201d. The MLP-up smoke is still running.",
+      "model_evidence_candidate": "At `C=1`, J-word was already incoherent on this two-item smoke: `+C` generated empty output and `-C` repeated \u201cabrasive\u201d. The MLP-up smoke is still running.",
+      "source_region": "pre_first_kept",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_restated_in_retained_tail",
+        "note": "Reviewed against entries 380 onward; this exact result or implementation detail is not restated in the retained tail."
+      }
+    },
+    {
+      "id": "fact-07",
+      "question": "What source-layer count, global norm, and live-coordinate count did the MLP-up shrink smoke report?",
+      "gold_answer": "29 source layers, global_norm=16.579, and live=142094.",
+      "source_entry_id": "79d50ad0",
+      "source_entry_index": 370,
+      "evidence_quote": "02:33:06 | vjp_mlp_up_shrink target=29 source_layers=29 global_norm=16.579 live=142094",
+      "model_evidence_candidate": "02:33:06 | vjp_mlp_up_shrink target=29 source_layers=29 global_norm=16.579 live=142094",
+      "source_region": "pre_first_kept",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_restated_in_retained_tail",
+        "note": "Reviewed against entries 380 onward; this exact result or implementation detail is not restated in the retained tail."
+      }
+    },
+    {
+      "id": "fact-08",
+      "question": "What repository, revision, and file define the published Qwen3.5-4B J-word lens?",
+      "gold_answer": "neuronpedia/jacobian-lens at qwen-n1000, file qwen3.5-4b/jlens/Salesforce-wikitext/Qwen3.5-4B_jacobian_lens_n1000.pt.",
+      "source_entry_id": "802f5bb3",
+      "source_entry_index": 297,
+      "evidence_quote": "J_WORD_LENS_REPO = \"neuronpedia/jacobian-lens\"\nJ_WORD_LENS_REVISION = \"qwen-n1000\"\nJ_WORD_LENS_FILE = \"qwen3.5-4b/jlens/Salesforce-wikitext/Qwen3.5-4B_jacobian_lens_n1000.pt\"",
+      "model_evidence_candidate": "J_WORD_LENS_REPO = \"neuronpedia/jacobian-lens\"\nJ_WORD_LENS_REVISION = \"qwen-n1000\"\nJ_WORD_LENS_FILE = \"qwen3.5-4b/jlens/Salesforce-wikitext/Qwen3.5-4B_jacobian_lens_n1000.pt\"",
+      "source_region": "pre_first_kept",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_restated_in_retained_tail",
+        "note": "Reviewed against entries 380 onward; this exact result or implementation detail is not restated in the retained tail."
+      }
+    },
+    {
+      "id": "fact-09",
+      "question": "What dose sequence did the proposed reverse walk sketch use around a boundary near C=0.7?",
+      "gold_answer": "C=1.5, 1, 0.75, 0.5, 0.25, evaluated back toward zero.",
+      "source_entry_id": "89751e25",
+      "source_entry_index": 167,
+      "evidence_quote": "The proposed walk first finds a dose beyond coherence, then evaluates doses back toward zero. For mean difference, the sketch is to find a boundary near `C=0.7`, then use `C=1.5, 1, 0.75, 0.5, 0.25`. This removes the increasing small steps around zero.",
+      "model_evidence_candidate": "The proposed walk first finds a dose beyond coherence, then evaluates doses back toward zero. For mean difference, the sketch is to find a boundary near `C=0.7`, then use `C=1.5, 1, 0.75, 0.5, 0.25`. This removes the increasing small steps around zero.",
+      "source_region": "pre_first_kept",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_restated_in_retained_tail",
+        "note": "Reviewed against entries 380 onward; this exact result or implementation detail is not restated in the retained tail."
+      }
+    },
+    {
+      "id": "fact-10",
+      "question": "What cotangent norm did the loaded J-word lens report?",
+      "gold_answer": "0.709.",
+      "source_entry_id": "371d8107",
+      "source_entry_index": 366,
+      "evidence_quote": "02:32:30 | J_word lens=/__modal/volumes/vo-UTqV2w7ZVWoNtNbbwwfTeq/hf/hub/models--neuronpedia--jacobian-lens/snapshots/16a01f309fcec900fdcec3f4cd5b64f3d00e4d5a/qwen3.5-4b/jlens/Salesforce-wikitext/Qwen3.5-4B_jacobian_lens_n1000.pt n_prompts=1000 words=sycophantic ids=[274, 3228, 4964, 7902] - abrasive ids=[90474] cotangent_norm=0.709",
+      "model_evidence_candidate": "02:32:30 | J_word lens=/__modal/volumes/vo-UTqV2w7ZVWoNtNbbwwfTeq/hf/hub/models--neuronpedia--jacobian-lens/snapshots/16a01f309fcec900fdcec3f4cd5b64f3d00e4d5a/qwen3.5-4b/jlens/Salesforce-wikitext/Qwen3.5-4B_jacobian_lens_n1000.pt n_prompts=1000 words=sycophantic ids=[274, 3228, 4964, 7902] - abrasive ids=[90474] cotangent_norm=0.709",
+      "source_region": "pre_first_kept",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_restated_in_retained_tail",
+        "note": "Reviewed against entries 380 onward; this exact result or implementation detail is not restated in the retained tail."
+      }
+    },
+    {
+      "id": "fact-11",
+      "question": "What remains before the dev3 method ports count as finished?",
+      "gold_answer": "Descending full-cohort runs must be output-audited and export a result CSV, then be judged and committed as a table and plot.",
+      "source_entry_id": "8709206c",
+      "source_entry_index": 404,
+      "evidence_quote": "The `dev3` branch has both method ports and real-model smoke results. The work remains open until descending full-cohort runs are judged and render a committed table and plot.",
+      "model_evidence_candidate": "The `dev3` branch has both method ports and real-model smoke results. The work remains open until descending full-cohort runs are judged and render a committed table and plot.",
+      "source_region": "retained_tail_control",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_applicable_tail_control",
+        "note": "Retained-tail control; leakage review does not apply."
+      }
+    },
+    {
+      "id": "fact-12",
+      "question": "Which five J-word doses must the current plan run below incoherent C=1?",
+      "gold_answer": "0.5, 0.25, 0.125, 0.0625, and 0.03125.",
+      "source_entry_id": "998cc42f",
+      "source_entry_index": 416,
+      "evidence_quote": "  - discriminator: one `J_word` seed has full bare/+C/-C outputs at `0.5, 0.25, 0.125, 0.0625, 0.03125`, with the selected dose determined by the judge",
+      "model_evidence_candidate": "  - discriminator: one `J_word` seed has full bare/+C/-C outputs at `0.5, 0.25, 0.125, 0.0625, 0.03125`, with the selected dose determined by the judge",
+      "source_region": "retained_tail_control",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_applicable_tail_control",
+        "note": "Retained-tail control; leakage review does not apply."
+      }
+    },
+    {
+      "id": "fact-13",
+      "question": "Which implementation properties must the MLP-up artifact name?",
+      "gold_answer": "mlp.up_proj, all prior layers, between-pair shrinkage, global normalization, and changed arms.",
+      "source_entry_id": "998cc42f",
+      "source_entry_index": 416,
+      "evidence_quote": "  - discriminator: the artifact names `mlp.up_proj`, all prior layers, between-pair shrinkage, global normalization, and changed arms",
+      "model_evidence_candidate": "  - discriminator: the artifact names `mlp.up_proj`, all prior layers, between-pair shrinkage, global normalization, and changed arms",
+      "source_region": "retained_tail_control",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_applicable_tail_control",
+        "note": "Retained-tail control; leakage review does not apply."
+      }
+    },
+    {
+      "id": "fact-14",
+      "question": "Why could the MLP-up C=1 smoke not determine coherence?",
+      "gold_answer": "It used only eight generated tokens.",
+      "source_entry_id": "998cc42f",
+      "source_entry_index": 416,
+      "evidence_quote": "- MLP-up executed all 29 source layers at C=1. The smoke used eight generated tokens, so it cannot determine coherence.",
+      "model_evidence_candidate": "- MLP-up executed all 29 source layers at C=1. The smoke used eight generated tokens, so it cannot determine coherence.",
+      "source_region": "retained_tail_control",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_applicable_tail_control",
+        "note": "Retained-tail control; leakage review does not apply."
+      }
+    },
+    {
+      "id": "fact-15",
+      "question": "What must remain unchanged when adding the two new result rows?",
+      "gold_answer": "The existing baseline and random rows; only J-word and MLP-up add rows.",
+      "source_entry_id": "998cc42f",
+      "source_entry_index": 416,
+      "evidence_quote": "- Existing baseline and random rows stay in place. Only J-word and MLP-up add new rows.",
+      "model_evidence_candidate": "- Existing baseline and random rows stay in place. Only J-word and MLP-up add new rows.",
+      "source_region": "retained_tail_control",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_applicable_tail_control",
+        "note": "Retained-tail control; leakage review does not apply."
+      }
+    },
+    {
+      "id": "fact-16",
+      "question": "How must the five full-cohort J-word rungs be launched on Modal?",
+      "gold_answer": "With the existing scripts/run_modal.py @app.function run and .spawn() calls.",
+      "source_entry_id": "998cc42f",
+      "source_entry_index": 416,
+      "evidence_quote": "    1. [ ] Use the existing `scripts/run_modal.py` `@app.function run` and `.spawn()` calls to run those five full-cohort rungs below the observed incoherent `C=1` point.",
+      "model_evidence_candidate": "    1. [ ] Use the existing `scripts/run_modal.py` `@app.function run` and `.spawn()` calls to run those five full-cohort rungs below the observed incoherent `C=1` point.",
+      "source_region": "retained_tail_control",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_applicable_tail_control",
+        "note": "Retained-tail control; leakage review does not apply."
+      }
+    },
+    {
+      "id": "fact-17",
+      "question": "What blocked the full Modal walks after the smoke tests?",
+      "gold_answer": "The unfinished boundary-walk refactor, not Modal runtime.",
+      "source_entry_id": "21a071e4",
+      "source_entry_index": 388,
+      "evidence_quote": "You are right. I made the wrong call: I stopped after the implementation smokes and did not start the full Modal walks. Modal runtime was not the blocker. The unfinished boundary-walk refactor was.",
+      "model_evidence_candidate": "You are right. I made the wrong call: I stopped after the implementation smokes and did not start the full Modal walks. Modal runtime was not the blocker. The unfinished boundary-walk refactor was.",
+      "source_region": "retained_tail_control",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_applicable_tail_control",
+        "note": "Retained-tail control; leakage review does not apply."
+      }
+    },
+    {
+      "id": "fact-18",
+      "question": "What completion work did the revised plan require after the scope was narrowed to smoke work?",
+      "gold_answer": "Full descending runs, judging, table, plot, and dev3 evidence.",
+      "source_entry_id": "929c8501",
+      "source_entry_index": 395,
+      "evidence_quote": "Yes. I narrowed into smoke work and lost the required end state. I am updating the active plan so it cannot be marked complete before the full descending runs, judging, table, plot, and `dev3` evidence exist.",
+      "model_evidence_candidate": "Yes. I narrowed into smoke work and lost the required end state. I am updating the active plan so it cannot be marked complete before the full descending runs, judging, table, plot, and `dev3` evidence exist.",
+      "source_region": "retained_tail_control",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_applicable_tail_control",
+        "note": "Retained-tail control; leakage review does not apply."
+      }
+    },
+    {
+      "id": "fact-19",
+      "question": "What commit added the descending Modal rungs, and how large was it?",
+      "gold_answer": "64c7819 \u201cRun descending Modal rungs\u201d; 14 insertions.",
+      "source_entry_id": "c48dc684",
+      "source_entry_index": 420,
+      "evidence_quote": "[dev3 64c7819] Run descending Modal rungs\n 1 file changed, 14 insertions(+)",
+      "model_evidence_candidate": "[dev3 64c7819] Run descending Modal rungs\n 1 file changed, 14 insertions(+)",
+      "source_region": "retained_tail_control",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_applicable_tail_control",
+        "note": "Retained-tail control; leakage review does not apply."
+      }
+    },
+    {
+      "id": "fact-20",
+      "question": "Which exact contrast does J-word use?",
+      "gold_answer": "unembed(sycophantic) - unembed(abrasive).",
+      "source_entry_id": "998cc42f",
+      "source_entry_index": 416,
+      "evidence_quote": "- J-word uses only the contrast `unembed(sycophantic) - unembed(abrasive)`.",
+      "model_evidence_candidate": "- J-word uses only the contrast `unembed(sycophantic) - unembed(abrasive)`.",
+      "source_region": "retained_tail_control",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_applicable_tail_control",
+        "note": "Retained-tail control; leakage review does not apply."
+      }
+    }
+  ]
+}

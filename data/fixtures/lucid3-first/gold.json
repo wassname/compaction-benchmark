@@ -1,0 +1,354 @@
+{
+  "schema_version": 2,
+  "fixture": "lucid3-first",
+  "source_sha256": "36afa64a976f4613e642d1ff325fc14806f807b0e85945a0824528d528049d51",
+  "historical_source_sha256": "252db70e8751cf2714abbda31e9d8e0198d119d88115c0ef43a3e0f2b3418d5b",
+  "first_kept_entry_id": "df826123",
+  "first_kept_entry_index": 61,
+  "regions": {
+    "pre_first_kept": 10,
+    "retained_tail_control": 10
+  },
+  "facts": [
+    {
+      "id": "fact-01",
+      "question": "What approval constraint did the user set before repository changes?",
+      "gold_answer": "Ask the user before making changes.",
+      "source_entry_id": "3221fdbb",
+      "source_entry_index": 6,
+      "evidence_quote": "but ask me before changes",
+      "model_evidence_candidate": "but ask me before changes",
+      "source_region": "pre_first_kept",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_restated_in_retained_tail",
+        "note": "Reviewed against retained entries 61-82; this result or constraint is not restated there."
+      }
+    },
+    {
+      "id": "fact-02",
+      "question": "What reduced configuration did the first LUCID3 GPU run use?",
+      "gold_answer": "W=64, rank 64, with the top singular bases of the released aggregate J matrix.",
+      "source_entry_id": "8a19c34e",
+      "source_entry_index": 11,
+      "evidence_quote": "The first GPU run used $W=64$, rank 64, and the top singular bases of the released aggregate J matrix. It was a cheaper J-subspace diagnostic, not the literal per-horizon $J_\\Delta$ residual specified below. [`docs/audits/job_45.md`](../../docs/audits/job_45.md) found validation conditional-mean signal but no nonlinear or causal success. The next diagnostic keeps this reduced setting while repairing checkpoint selection, document provenance, prefix-invariance checks, and fixed-future effect metrics. Fitting the full $J_\\Delta$ path waits until those seams pass.",
+      "model_evidence_candidate": "The first GPU run used $W=64$, rank 64, and the top singular bases of the released aggregate J matrix. It was a cheaper J-subspace diagnostic, not the literal per-horizon $J_\\Delta$ residual specified below. [`docs/audits/job_45.md`](../../docs/audits/job_45.md) found validation conditional-mean signal but no nonlinear or causal success. The next diagnostic keeps this reduced setting while repairing checkpoint selection, document provenance, prefix-invariance checks, and fixed-future effect metrics. Fitting the full $J_\\Delta$ path waits until those seams pass.",
+      "source_region": "pre_first_kept",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_restated_in_retained_tail",
+        "note": "Reviewed against retained entries 61-82; this result or constraint is not restated there."
+      }
+    },
+    {
+      "id": "fact-03",
+      "question": "What did the job 45 audit find in the first reduced LUCID3 run?",
+      "gold_answer": "Validation conditional-mean signal, but no nonlinear or causal success.",
+      "source_entry_id": "8a19c34e",
+      "source_entry_index": 11,
+      "evidence_quote": "[`docs/audits/job_45.md`](../../docs/audits/job_45.md) found validation conditional-mean signal but no nonlinear or causal success.",
+      "model_evidence_candidate": "[`docs/audits/job_45.md`](../../docs/audits/job_45.md) found validation conditional-mean signal but no nonlinear or causal success.",
+      "source_region": "pre_first_kept",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_restated_in_retained_tail",
+        "note": "Reviewed against retained entries 61-82; this result or constraint is not restated there."
+      }
+    },
+    {
+      "id": "fact-04",
+      "question": "What was the first reduced run relative to the specified per-horizon J-delta residual?",
+      "gold_answer": "It was a cheaper J-subspace diagnostic, not the literal per-horizon J-delta residual.",
+      "source_entry_id": "8a19c34e",
+      "source_entry_index": 11,
+      "evidence_quote": "It was a cheaper J-subspace diagnostic, not the literal per-horizon $J_\\Delta$ residual specified below.",
+      "model_evidence_candidate": "It was a cheaper J-subspace diagnostic, not the literal per-horizon $J_\\Delta$ residual specified below.",
+      "source_region": "pre_first_kept",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_restated_in_retained_tail",
+        "note": "Reviewed against retained entries 61-82; this result or constraint is not restated there."
+      }
+    },
+    {
+      "id": "fact-05",
+      "question": "What condition failed despite saved artifacts and exact complete maps, and where was the next failure localized?",
+      "gold_answer": "The complete-map resolve condition failed; the next failure was localized to categorical emission and termination.",
+      "source_entry_id": "5b209137",
+      "source_entry_index": 50,
+      "evidence_quote": "../LUCID2/docs/audits/job_65.md-14-| persistence/resolve | artifacts saved and exact complete maps | artifacts saved; complete-map resolve condition fails | artifacts yes, resolve no | [`run.md:468`](../../outputs/runs/2026-08-29_142410_v40_r64_m16/run.md#L468), [`raw.jsonl:110`](../../outputs/runs/2026-08-29_142410_v40_r64_m16/raw.jsonl) | none | next failure is localized to categorical emission and termination |",
+      "model_evidence_candidate": "../LUCID2/docs/audits/job_65.md-14-| persistence/resolve | artifacts saved and exact complete maps | artifacts saved; complete-map resolve condition fails | artifacts yes, resolve no | [`run.md:468`](../../outputs/runs/2026-08-29_142410_v40_r64_m16/run.md#L468), [`raw.jsonl:110`](../../outputs/runs/2026-08-29_142410_v40_r64_m16/raw.jsonl) | none | next failure is localized to categorical emission and termination |",
+      "source_region": "pre_first_kept",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_restated_in_retained_tail",
+        "note": "Reviewed against retained entries 61-82; this result or constraint is not restated there."
+      }
+    },
+    {
+      "id": "fact-06",
+      "question": "What memory-field accuracy and confidence did the job 65 audit report while planning remained exact?",
+      "gold_answer": "Accuracy 0.998 and confidence 0.981.",
+      "source_entry_id": "5b209137",
+      "source_entry_index": 50,
+      "evidence_quote": "../LUCID2/docs/audits/job_65.md-94-5. **Three highest-information clues:** (1) field token `yard` but generated `hall`; (2) the midpoint base's first six edges are exact; (3) memory-field accuracy/confidence are `0.998/0.981` while planning remains exact.",
+      "model_evidence_candidate": "../LUCID2/docs/audits/job_65.md-94-5. **Three highest-information clues:** (1) field token `yard` but generated `hall`; (2) the midpoint base's first six edges are exact; (3) memory-field accuracy/confidence are `0.998/0.981` while planning remains exact.",
+      "source_region": "pre_first_kept",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_restated_in_retained_tail",
+        "note": "Reviewed against retained entries 61-82; this result or constraint is not restated there."
+      }
+    },
+    {
+      "id": "fact-07",
+      "question": "How were the r=64 transition slots restructured, including their width and how the four-way action identity constrained active directions?",
+      "gold_answer": "Each affine-sum slot became fixed source/action/destination fields at the same width, with known four-way action identity restricting candidate slots.",
+      "source_entry_id": "a67f6fec",
+      "source_entry_index": 53,
+      "evidence_quote": "Decision: keep canonical location and trainable memory. Replace each affine-sum r=64 transition slot with fixed source/action/destination fields inside the same width. Use the known four-way action identity to restrict candidate slots in forward and reverse directions.",
+      "model_evidence_candidate": "Decision: keep canonical location and trainable memory. Replace each affine-sum r=64 transition slot with fixed source/action/destination fields inside the same width. Use the known four-way action identity to restrict candidate slots in forward and reverse directions.",
+      "source_region": "pre_first_kept",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_restated_in_retained_tail",
+        "note": "Reviewed against retained entries 61-82; this result or constraint is not restated there."
+      }
+    },
+    {
+      "id": "fact-08",
+      "question": "How did job 66 produce complete causal maps?",
+      "gold_answer": "It directly serialized learned transition-memory fields and stopped after the final valid edge.",
+      "source_entry_id": "9fd6dc9b",
+      "source_entry_index": 54,
+      "evidence_quote": "This run directly serialized the learned transition-memory fields and stopped after the final valid edge.",
+      "model_evidence_candidate": "This run directly serialized the learned transition-memory fields and stopped after the final valid edge.",
+      "source_region": "pre_first_kept",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_restated_in_retained_tail",
+        "note": "Reviewed against retained entries 61-82; this result or constraint is not restated there."
+      }
+    },
+    {
+      "id": "fact-09",
+      "question": "What observed-prefix width and future horizon does the LUCID3 pseudocode set?",
+      "gold_answer": "W=128 and K=8.",
+      "source_entry_id": "b8704bd5",
+      "source_entry_index": 14,
+      "evidence_quote": "W, K = 128, 8                                     # observed prefix, future horizon",
+      "model_evidence_candidate": "W, K = 128, 8                                     # observed prefix, future horizon",
+      "source_region": "pre_first_kept",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_restated_in_retained_tail",
+        "note": "Reviewed against retained entries 61-82; this result or constraint is not restated there."
+      }
+    },
+    {
+      "id": "fact-10",
+      "question": "What result would show that the current middle state already summarizes nearly all useful prefix information?",
+      "gold_answer": "The GRU would not beat the pointwise MLP.",
+      "source_entry_id": "8a19c34e",
+      "source_entry_index": 11,
+      "evidence_quote": "- The current middle state may already summarize nearly all useful prefix information; then the GRU should not beat the pointwise MLP.",
+      "model_evidence_candidate": "- The current middle state may already summarize nearly all useful prefix information; then the GRU should not beat the pointwise MLP.",
+      "source_region": "pre_first_kept",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_restated_in_retained_tail",
+        "note": "Reviewed against retained entries 61-82; this result or constraint is not restated there."
+      }
+    },
+    {
+      "id": "fact-11",
+      "question": "What four stages does the oracle recommend for the LUCID3 evidence program?",
+      "gold_answer": "future residual prediction, learned causal read/write intervention, autonomous action-conditioned latent rollout, maze planning with disabling ablations, plus measurement integrity",
+      "source_entry_id": "04c9df35",
+      "source_entry_index": 67,
+      "evidence_quote": "The strongest minimal paper arc is:\n\n1. future residual prediction;\n2. learned causal read/write intervention;\n3. autonomous action-conditioned latent rollout;\n4. maze planning with disabling ablations.",
+      "model_evidence_candidate": "The strongest minimal paper arc is:\n\n1. future residual prediction;\n2. learned causal read/write intervention;\n3. autonomous action-conditioned latent rollout;\n4. maze planning with disabling ablations.",
+      "source_region": "retained_tail_control",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_applicable_tail_control",
+        "note": "Retained-tail control; leakage review does not apply."
+      }
+    },
+    {
+      "id": "fact-12",
+      "question": "Why can the current LUCID3 predictor not perform autonomous rollout or planning?",
+      "gold_answer": "It is a prefix-to-K-targets map with no recurrent latent transition that consumes its own prediction, no action input, and no reward/termination model.",
+      "source_entry_id": "04c9df35",
+      "source_entry_index": 67,
+      "evidence_quote": "The current predictor is a prefix-to-\\(K\\)-targets map. It has no recurrent latent transition that consumes its own prediction, no action input, and no reward/termination model. It therefore cannot autonomously roll out or plan.",
+      "model_evidence_candidate": "The current predictor is a prefix-to-\\(K\\)-targets map. It has no recurrent latent transition that consumes its own prediction, no action input, and no reward/termination model. It therefore cannot autonomously roll out or plan.",
+      "source_region": "retained_tail_control",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_applicable_tail_control",
+        "note": "Retained-tail control; leakage review does not apply."
+      }
+    },
+    {
+      "id": "fact-13",
+      "question": "How does DreamerV2's transition predictor operate relative to the next image?",
+      "gold_answer": "It guesses the next model state only from the current model state and the action, without using the next image",
+      "source_entry_id": "bd5ae794",
+      "source_entry_index": 77,
+      "evidence_quote": "The transition predictor guesses the next model state only from the current model state and the action but without using the next image, so that we can later learn behaviors by predicting sequences of model states without having to observe or generate images.",
+      "model_evidence_candidate": "The transition predictor guesses the next model state only from the current model state and the action but without using the next image, so that we can later learn behaviors by predicting sequences of model states without having to observe or generate images.",
+      "source_region": "retained_tail_control",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_applicable_tail_control",
+        "note": "Retained-tail control; leakage review does not apply."
+      }
+    },
+    {
+      "id": "fact-14",
+      "question": "How does DreamerV3 select actions during environment interaction?",
+      "gold_answer": "By sampling from the actor network without lookahead planning",
+      "source_entry_id": "bd5ae794",
+      "source_entry_index": 77,
+      "evidence_quote": "For environment interaction, we select actions by sampling from the actor network without lookahead planning.",
+      "model_evidence_candidate": "For environment interaction, we select actions by sampling from the actor network without lookahead planning.",
+      "source_region": "retained_tail_control",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_applicable_tail_control",
+        "note": "Retained-tail control; leakage review does not apply."
+      }
+    },
+    {
+      "id": "fact-15",
+      "question": "On which milestones does DreamerV4 imagination training improve most over behavior cloning?",
+      "gold_answer": "On more challenging milestones.",
+      "source_entry_id": "bd5ae794",
+      "source_entry_index": 77,
+      "evidence_quote": "Imagination training shows stronger improvements over the behavior cloning agents the more chal-lenging the milestone is.",
+      "model_evidence_candidate": "Imagination training shows stronger improvements over the behavior cloning agents the more chal-lenging the milestone is.",
+      "source_region": "retained_tail_control",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_applicable_tail_control",
+        "note": "Retained-tail control; leakage review does not apply."
+      }
+    },
+    {
+      "id": "fact-16",
+      "question": "What representation parameterization does DreamerV4 use to enable high-quality rollouts of arbitrary length?",
+      "gold_answer": "Predicting clean representations, called x-prediction",
+      "source_entry_id": "bd5ae794",
+      "source_entry_index": 77,
+      "evidence_quote": "Instead, we found that parameterizing the network to predict clean representations, called x-prediction, enables high-quality rollouts of arbitrary length.",
+      "model_evidence_candidate": "Instead, we found that parameterizing the network to predict clean representations, called x-prediction, enables high-quality rollouts of arbitrary length.",
+      "source_region": "retained_tail_control",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_applicable_tail_control",
+        "note": "Retained-tail control; leakage review does not apply."
+      }
+    },
+    {
+      "id": "fact-17",
+      "question": "In the DreamerV3 DMLab example, how many context images and future frames were used?",
+      "gold_answer": "Five context images and 45 predicted future frames.",
+      "source_entry_id": "bd5ae794",
+      "source_entry_index": 77,
+      "evidence_quote": "Given 5 context images and the full action sequence, the model predicts 45 frames into the future without access to intermediate images.",
+      "model_evidence_candidate": "Given 5 context images and the full action sequence, the model predicts 45 frames into the future without access to intermediate images.",
+      "source_region": "retained_tail_control",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_applicable_tail_control",
+        "note": "Retained-tail control; leakage review does not apply."
+      }
+    },
+    {
+      "id": "fact-18",
+      "question": "What caused the three parallel researcher subagents to fail during the Dreamer paper review?",
+      "gold_answer": "Their profile requested up to 128k output tokens while the OpenRouter key could fund about 9k",
+      "source_entry_id": "e7ef21d4",
+      "source_entry_index": 73,
+      "evidence_quote": "Three parallel researcher children failed before reading anything because their profile requested up to 128k output tokens while the OpenRouter key could fund about 9k.",
+      "model_evidence_candidate": "Three parallel researcher children failed before reading anything because their profile requested up to 128k output tokens while the OpenRouter key could fund about 9k.",
+      "source_region": "retained_tail_control",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_applicable_tail_control",
+        "note": "Retained-tail control; leakage review does not apply."
+      }
+    },
+    {
+      "id": "fact-19",
+      "question": "What is the stated goal for LUCID3's research program?",
+      "gold_answer": "Extract a compact, nonlinear latent dynamics model from a frozen language model that can be used for planning",
+      "source_entry_id": "d8ed074f",
+      "source_entry_index": 82,
+      "evidence_quote": "Goal: extract a compact, nonlinear latent dynamics model from a frozen language model that can be used for planning.",
+      "model_evidence_candidate": "Goal: extract a compact, nonlinear latent dynamics model from a frozen language model that can be used for planning.",
+      "source_region": "retained_tail_control",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_applicable_tail_control",
+        "note": "Retained-tail control; leakage review does not apply."
+      }
+    },
+    {
+      "id": "fact-20",
+      "question": "When does LUCID3 qualify as having a latent dynamics model?",
+      "gold_answer": "Only when a predicted state can be fed back into the transition under an action",
+      "source_entry_id": "d8ed074f",
+      "source_entry_index": 82,
+      "evidence_quote": "This gives us an important discriminator: LUCID3 has a latent dynamics model only when a predicted state can be fed back into the transition under an action.",
+      "model_evidence_candidate": "This gives us an important discriminator: LUCID3 has a latent dynamics model only when a predicted state can be fed back into the transition under an action.",
+      "source_region": "retained_tail_control",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_applicable_tail_control",
+        "note": "Retained-tail control; leakage review does not apply."
+      }
+    }
+  ]
+}

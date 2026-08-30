@@ -1,0 +1,354 @@
+{
+  "schema_version": 2,
+  "fixture": "lucid-aug20",
+  "source_sha256": "d7aa82c6cd6a10074e952f8f146f45a29b9463cc6a1c40f40ba677c1adafec7c",
+  "historical_source_sha256": "4474e325dd8f234fd881a9434b40df49eb5b1a10edb6ccb55f49dc2dbb105d41",
+  "first_kept_entry_id": "59bd7a65",
+  "first_kept_entry_index": 207,
+  "regions": {
+    "pre_first_kept": 10,
+    "retained_tail_control": 10
+  },
+  "facts": [
+    {
+      "id": "fact-01",
+      "question": "How far below the copy ceiling were the r=16 and r=64 oracle rows?",
+      "gold_answer": "The r=16 oracle was at half the copy ceiling, while r=64 was at a quarter.",
+      "source_entry_id": "7e6e60ad",
+      "source_entry_index": 25,
+      "evidence_quote": "- Small r already well under the copy ceiling: r=16 at half, r=64 at a quarter. ✓",
+      "model_evidence_candidate": "- Small r already well under the copy ceiling: r=16 at half, r=64 at a quarter. ✓",
+      "source_region": "pre_first_kept",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_restated_in_retained_tail",
+        "note": "The retained tail has no oracle r=16/r=64 ceiling result."
+      }
+    },
+    {
+      "id": "fact-02",
+      "question": "What did the v13 oracle prove at r=d=2048?",
+      "gold_answer": "At r=d=2048 the oracle KL was about 0.0011 nats, confirming the identity-substitution sanity check was approximately zero.",
+      "source_entry_id": "7e6e60ad",
+      "source_entry_index": 25,
+      "evidence_quote": "- r=d=2048 → 0.0011: identity-substitution sanity, ~0. ✓",
+      "model_evidence_candidate": "- r=d=2048 → 0.0011: identity-substitution sanity, ~0. ✓",
+      "source_region": "pre_first_kept",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_restated_in_retained_tail",
+        "note": "The retained tail has no 0.0011 identity-substitution result."
+      }
+    },
+    {
+      "id": "fact-03",
+      "question": "What was the token-mean E[Δ|x[n]] oracle KL, and what fraction of the copy ceiling was it?",
+      "gold_answer": "Token-mean E[Δ|x[n]] KL was 3.99 nats, or 0.527 times the copy ceiling.",
+      "source_entry_id": "ad4ad1d0",
+      "source_entry_index": 105,
+      "evidence_quote": "**Token-mean `E[Δ|x[n]]` KL = 3.99 nats (0.527× copy)** — compared to oracle-r=64 at 1.83 (0.242×) and oracle-r=16 at\n3.84 (0.507×).",
+      "model_evidence_candidate": "**Token-mean `E[Δ|x[n]]` KL = 3.99 nats (0.527× copy)** — compared to oracle-r=64 at 1.83 (0.242×) and oracle-r=16 at\n3.84 (0.507×).",
+      "source_region": "pre_first_kept",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_restated_in_retained_tail",
+        "note": "The retained tail has no 3.99-nat or 0.527-copy token-mean result."
+      }
+    },
+    {
+      "id": "fact-04",
+      "question": "What was the headline KL(token_only) − KL(full) gap from the v13 train audit?",
+      "gold_answer": "The gap was +0.041 nats.",
+      "source_entry_id": "534e6915",
+      "source_entry_index": 118,
+      "evidence_quote": "The headline `KL(token_only) - KL(full)` at Q4 = **1.0573 - 1.0165 = +0.041 nats** — *a positive but tiny gap*, far\nbelow the noise/CI scale. The reviewer's fear was borne out: at r=64, the token-mean bound (3.99) meant token_only's\nfloor was already low, and indeed both arms land near 1.0-1.05 — the field between them is only 0.04 nats.",
+      "model_evidence_candidate": "The headline `KL(token_only) - KL(full)` at Q4 = **1.0573 - 1.0165 = +0.041 nats** — *a positive but tiny gap*, far\nbelow the noise/CI scale. The reviewer's fear was borne out: at r=64, the token-mean bound (3.99) meant token_only's\nfloor was already low, and indeed both arms land near 1.0-1.05 — the field between them is only 0.04 nats.",
+      "source_region": "pre_first_kept",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_restated_in_retained_tail",
+        "note": "The retained tail has no +0.041-nat Q4 gap."
+      }
+    },
+    {
+      "id": "fact-05",
+      "question": "Did the trained write use z, or was z ignored?",
+      "gold_answer": "The write was genuinely z-sensitive, but its steering signal was too small to flip a greedy argmax path.",
+      "source_entry_id": "f2c5c351",
+      "source_entry_index": 123,
+      "evidence_quote": "**Z is used — the write is genuinely z-sensitive — but the steering signal is real yet far too small to flip an argmax",
+      "model_evidence_candidate": "**Z is used — the write is genuinely z-sensitive — but the steering signal is real yet far too small to flip an argmax",
+      "source_region": "pre_first_kept",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_restated_in_retained_tail",
+        "note": "The retained tail does not state the job-42 z-sensitivity and argmax finding."
+      }
+    },
+    {
+      "id": "fact-06",
+      "question": "Did any scale make +z and -z take opposite stances while placebo tracked base on job 42's checkpoint?",
+      "gold_answer": "No. Scale 1 changed only -z; scale 4 made -z incoherent and moved placebo; at scales 8 and 16, +z followed the earlier -z path while placebo matched +z.",
+      "source_entry_id": "8fe19adf",
+      "source_entry_index": 148,
+      "evidence_quote": "**Conclusion: this checkpoint cannot produce the demo.** There is no scale where +z and -z commit opposite stances while\nplacebo tracks base:\n- scale 1: only -z diverges (placebo tracks, but no opposite pair)\n- scale 4: -z is soup, placebo diverges\n- scale 8/16: +z lands on -z's earlier path, -z is soup, placebo matches +z\n- coherence holds only at scale 1, where +z is a no-op.",
+      "model_evidence_candidate": "**Conclusion: this checkpoint cannot produce the demo.** There is no scale where +z and -z commit opposite stances while\nplacebo tracks base:\n- scale 1: only -z diverges (placebo tracks, but no opposite pair)\n- scale 4: -z is soup, placebo diverges\n- scale 8/16: +z lands on -z's earlier path, -z is soup, placebo matches +z\n- coherence holds only at scale 1, where +z is a no-op.",
+      "source_region": "pre_first_kept",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_restated_in_retained_tail",
+        "note": "The retained tail discusses later checkpoints but does not state the job-42 scale-sweep outcome."
+      }
+    },
+    {
+      "id": "fact-07",
+      "question": "What happened on the Journey anchor at scale 1?",
+      "gold_answer": "Base was stable English; +z matched base; -z moved to the 'soul of the music' topic; shuffled z also diverged.",
+      "source_entry_id": "97130cd4",
+      "source_entry_index": 143,
+      "evidence_quote": "The key finding stands without it. Let me record and report: base stable English, +z = base (no effect), -z diverges to\na different topic (\"soul of the music\" vs \"surreal/dreamlike\"), shuf also diverges (score by the composer), donor =\nbase.",
+      "model_evidence_candidate": "The key finding stands without it. Let me record and report: base stable English, +z = base (no effect), -z diverges to\na different topic (\"soul of the music\" vs \"surreal/dreamlike\"), shuf also diverges (score by the composer), donor =\nbase.",
+      "source_region": "pre_first_kept",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_restated_in_retained_tail",
+        "note": "The retained tail does not contain the Journey “soul of the music” result."
+      }
+    },
+    {
+      "id": "fact-08",
+      "question": "What did the --write_target 0.15 smoke test do to |delta|/|hs|?",
+      "gold_answer": "It reduced |delta|/|hs| to 0.1035, inside the 0.05–0.2 steering band, versus the 0.74 baseline.",
+      "source_entry_id": "cd2e23eb",
+      "source_entry_index": 153,
+      "evidence_quote": "The barrier works: with `--write_target 0.15`, |delta|/|hs| is **0.1035** (in the 0.05-0.2 steering band) vs 0.74\nbaseline. That's exactly the pre-registered prediction 1. Let me fix the config comment (it says \"post-scale\", now it's\na barrier) and commit:",
+      "model_evidence_candidate": "The barrier works: with `--write_target 0.15`, |delta|/|hs| is **0.1035** (in the 0.05-0.2 steering band) vs 0.74\nbaseline. That's exactly the pre-registered prediction 1. Let me fix the config comment (it says \"post-scale\", now it's\na barrier) and commit:",
+      "source_region": "pre_first_kept",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_restated_in_retained_tail",
+        "note": "The retained tail does not contain the 0.1035 smoke ratio."
+      }
+    },
+    {
+      "id": "fact-09",
+      "question": "How did the full arm's rollout KL change from j=0 through j=3?",
+      "gold_answer": "It rose from 1.22 to 1.98 to 3.53 to 3.54.",
+      "source_entry_id": "534e6915",
+      "source_entry_index": 118,
+      "evidence_quote": "| rollout j=0→3 | flat, no explosion | 1.22→1.98→**3.53**→3.54 | 1.34→2.15→3.23→3.49 |",
+      "model_evidence_candidate": "| rollout j=0→3 | flat, no explosion | 1.22→1.98→**3.53**→3.54 | 1.34→2.15→3.23→3.49 |",
+      "source_region": "pre_first_kept",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_restated_in_retained_tail",
+        "note": "The retained tail does not contain the full-arm 1.22→1.98→3.53→3.54 rollout."
+      }
+    },
+    {
+      "id": "fact-10",
+      "question": "What were the final |delta|/|hs| ratios for the full and token-only arms?",
+      "gold_answer": "The full arm was 0.74 and token-only was 0.77, both above the expected ceiling of 0.5.",
+      "source_entry_id": "534e6915",
+      "source_entry_index": 118,
+      "evidence_quote": "| \\|delta\\|/\\|hs\\| | < 0.5 | **0.74** | **0.77** |",
+      "model_evidence_candidate": "| \\|delta\\|/\\|hs\\| | < 0.5 | **0.74** | **0.77** |",
+      "source_region": "pre_first_kept",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_restated_in_retained_tail",
+        "note": "The retained tail does not contain the paired 0.74/0.77 final ratios."
+      }
+    },
+    {
+      "id": "fact-11",
+      "question": "What condition causes job 35 in the j-steer sweep to self-terminate?",
+      "gold_answer": "Two consecutive breakdowns: both +C and −C poles get breakdown_reasons non-empty twice in a row",
+      "source_entry_id": "59bd7a65",
+      "source_entry_index": 207,
+      "evidence_quote": "the walk stops when both\n+C and −C poles get **two consecutive breakdowns** (per-pole `breakdown_reasons` non-empty twice in a row)",
+      "model_evidence_candidate": "the walk stops when both\n+C and −C poles get **two consecutive breakdowns** (per-pole `breakdown_reasons` non-empty twice in a row)",
+      "source_region": "retained_tail_control",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_applicable_tail_control",
+        "note": "Retained-tail control; leakage review does not apply."
+      }
+    },
+    {
+      "id": "fact-12",
+      "question": "What was the outcome of the write-target barrier on job 45's demo checkpoint?",
+      "gold_answer": "It reduced train-time write magnitude but not prime-time magnitude; the checkpoint still failed the demo controls.",
+      "source_entry_id": "fd9e0988",
+      "source_entry_index": 211,
+      "evidence_quote": "Committed. Job 47 (scale sweep) is queued; job 45 is audited. Status: the write-target barrier moved train-time\nmagnitude but not primetime; the checkpoint still fails the demo controls. Next move per the kill rule: per-position\nwrite (c).",
+      "model_evidence_candidate": "Committed. Job 47 (scale sweep) is queued; job 45 is audited. Status: the write-target barrier moved train-time\nmagnitude but not primetime; the checkpoint still fails the demo controls. Next move per the kill rule: per-position\nwrite (c).",
+      "source_region": "retained_tail_control",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_applicable_tail_control",
+        "note": "Retained-tail control; leakage review does not apply."
+      }
+    },
+    {
+      "id": "fact-13",
+      "question": "What blocking duplicate was removed from the pueue queue?",
+      "gold_answer": "Job 46 was a malformed duplicate with repeated --scale flags; it was queued ahead of valid job 47 and was removed.",
+      "source_entry_id": "f85742fc",
+      "source_entry_index": 229,
+      "evidence_quote": "Job 46 is the malformed duplicate I meant to replace (its queue command was `--scale 1 --scale 4...` repeated flags —\nthe demo only accepts one `--scale`). It never ran (no log file) and sits queued ahead of the good job 47. `pueue kill`\non a queued job fails; I should remove it from the queue so 47 isn't blocked behind a broken job. Let me check pueue's\ncommand for removing a (#8)\n* bash \"pueue -h 2>&1 | grep -iE \"remove|delete|dequeue|requeue|edit|swap\" | head; echo \"=== try remove ===\"; pueue\n  remove 46 2>&1\" (#8)\nJob 46 (the broken duplicate) removed from the queue. Now the ordering is clean: j-steer 36 running → 47 (prio 5)\novertakes 37-40 (prio 0) when 36 finishes. Let me confirm: (#10)",
+      "model_evidence_candidate": "Job 46 is the malformed duplicate I meant to replace (its queue command was `--scale 1 --scale 4...` repeated flags —\nthe demo only accepts one `--scale`). It never ran (no log file) and sits queued ahead of the good job 47. `pueue kill`\non a queued job fails; I should remove it from the queue so 47 isn't blocked behind a broken job. Let me check pueue's\ncommand for removing a (#8)\n* bash \"pueue -h 2>&1 | grep -iE \"remove|delete|dequeue|requeue|edit|swap\" | head; echo \"=== try remove ===\"; pueue\n  remove 46 2>&1\" (#8)\nJob 46 (the broken duplicate) removed from the queue. Now the ordering is clean: j-steer 36 running → 47 (prio 5)\novertakes 37-40 (prio 0) when 36 finishes. Let me confirm: (#10)",
+      "source_region": "retained_tail_control",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_applicable_tail_control",
+        "note": "Retained-tail control; leakage review does not apply."
+      }
+    },
+    {
+      "id": "fact-14",
+      "question": "Which follower process was confirmed alive watching job 47?",
+      "gold_answer": "proc_e4be was running pqf 47.",
+      "source_entry_id": "38184e22",
+      "source_entry_index": 216,
+      "evidence_quote": "Confirmed: **proc_e4be → `pqf 47`** is running — that's the live follower on the queued scale sweep (job 47). The `pqf\n45` entries show exited as expected (job 45 already completed). The tmp dir existed this time so the start went through\ncleanly.",
+      "model_evidence_candidate": "Confirmed: **proc_e4be → `pqf 47`** is running — that's the live follower on the queued scale sweep (job 47). The `pqf\n45` entries show exited as expected (job 45 already completed). The tmp dir existed this time so the start went through\ncleanly.",
+      "source_region": "retained_tail_control",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_applicable_tail_control",
+        "note": "Retained-tail control; leakage review does not apply."
+      }
+    },
+    {
+      "id": "fact-15",
+      "question": "What was the most important progress on job 45's new checkpoint?",
+      "gold_answer": "The demo arms genuinely diverged into coherent English, but the controls still failed.",
+      "source_entry_id": "fd9e0988",
+      "source_entry_index": 211,
+      "evidence_quote": "That's the most important result so far: on the new checkpoint the **demo arms genuinely diverge into coherent\nEnglish**, but the controls still fail. Let me queue a proper dose sweep (I ran this one directly, which shared the GPU\nlane against the pueue rule;",
+      "model_evidence_candidate": "That's the most important result so far: on the new checkpoint the **demo arms genuinely diverge into coherent\nEnglish**, but the controls still fail. Let me queue a proper dose sweep (I ran this one directly, which shared the GPU\nlane against the pueue rule;",
+      "source_region": "retained_tail_control",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_applicable_tail_control",
+        "note": "Retained-tail control; leakage review does not apply."
+      }
+    },
+    {
+      "id": "fact-16",
+      "question": "What is the exact demo print format that shows start and end with a visible middle elision marker?",
+      "gold_answer": "head [...] tail with an explicit marker, equal-width so the four arms row up start+end",
+      "source_entry_id": "d9116902",
+      "source_entry_index": 271,
+      "evidence_quote": "v13 demo: _fmt_gen head [...] tail with explicit marker, arms row up start+end",
+      "model_evidence_candidate": "v13 demo: _fmt_gen head [...] tail with explicit marker, arms row up start+end",
+      "source_region": "retained_tail_control",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_applicable_tail_control",
+        "note": "Retained-tail control; leakage review does not apply."
+      }
+    },
+    {
+      "id": "fact-17",
+      "question": "What two jobs does the DreamerV2 KL loss perform via the posterior/prior split?",
+      "gold_answer": "It both trains the prior and regularizes how much information the posterior incorporates from the image",
+      "source_entry_id": "fcde384e",
+      "source_entry_index": 311,
+      "evidence_quote": "The KL loss both trains the prior and **regularizes how much information the posterior incorporates from the image**.",
+      "model_evidence_candidate": "The KL loss both trains the prior and **regularizes how much information the posterior incorporates from the image**.",
+      "source_region": "retained_tail_control",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_applicable_tail_control",
+        "note": "Retained-tail control; leakage review does not apply."
+      }
+    },
+    {
+      "id": "fact-18",
+      "question": "What catch did the reviewer identify in saying v13's next-token NLL fills the posterior role?",
+      "gold_answer": "That is true only if z is trained to anticipate; the demo failures are consistent with z not being forced into an anticipating state.",
+      "source_entry_id": "ff332977",
+      "source_entry_index": 312,
+      "evidence_quote": "This is an excellent answer: the worker grounded it in the actual DreamerV2 paper quote (the ELBO's two jobs: train prior + regularize posterior), explained why v13's next-token NLL *should* in principle fill the posterior role, but then honestly surfaced the catch — that's only true if z is trained to anticipate, and the demo failures (rank-1 z, wrong-z ≈ own-z, write collapse) are consistent with z not being forced into an anticipating state. It proposed a concrete probe on the job-45 checkpoint to separate it.",
+      "model_evidence_candidate": "This is an excellent answer: the worker grounded it in the actual DreamerV2 paper quote (the ELBO's two jobs: train prior + regularize posterior), explained why v13's next-token NLL *should* in principle fill the posterior role, but then honestly surfaced the catch — that's only true if z is trained to anticipate, and the demo failures (rank-1 z, wrong-z ≈ own-z, write collapse) are consistent with z not being forced into an anticipating state. It proposed a concrete probe on the job-45 checkpoint to separate it.",
+      "source_region": "retained_tail_control",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_applicable_tail_control",
+        "note": "Retained-tail control; leakage review does not apply."
+      }
+    },
+    {
+      "id": "fact-19",
+      "question": "What is the strict order of the two training phases?",
+      "gold_answer": "Phase 1 uses wikitext with topic standing in for preference, and it gates phase 2 personas with real preference steering.",
+      "source_entry_id": "ce788743",
+      "source_entry_index": 315,
+      "evidence_quote": "So the order is strict: **phase 1 (wikitext, topic-as-preference) gates phase 2 (personas, real preference steering)**.",
+      "model_evidence_candidate": "So the order is strict: **phase 1 (wikitext, topic-as-preference) gates phase 2 (personas, real preference steering)**.",
+      "source_region": "retained_tail_control",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_applicable_tail_control",
+        "note": "Retained-tail control; leakage review does not apply."
+      }
+    },
+    {
+      "id": "fact-20",
+      "question": "After job 47 failed, how was the checkpoint scale sweep re-queued?",
+      "gold_answer": "It became three single-call pueue jobs: 41 at scale 8, 42 at scale 4, and 43 at scale 16, avoiding the failed inline loop.",
+      "source_entry_id": "e94021e1",
+      "source_entry_index": 303,
+      "evidence_quote": "Scale sweep re-queued properly as three explicit jobs (41=scale 8, 42=scale 4, 43=scale 16), each a plain single-call\ndemo command (no fragile inline `for...do` that caused the earlier 47 failure). Followers attached for all three. Job\n1's scale-16 job 43 will run after 37 (j-steer) finishes, overtaking 38-40.",
+      "model_evidence_candidate": "Scale sweep re-queued properly as three explicit jobs (41=scale 8, 42=scale 4, 43=scale 16), each a plain single-call\ndemo command (no fragile inline `for...do` that caused the earlier 47 failure). Followers attached for all three. Job\n1's scale-16 job 43 will run after 37 (j-steer) finishes, overtaking 38-40.",
+      "source_region": "retained_tail_control",
+      "manual_review": {
+        "reviewer": "claude",
+        "evidence_supports_gold": true,
+        "question_matches_gold": true,
+        "tail_leakage_review": "not_applicable_tail_control",
+        "note": "Retained-tail control; leakage review does not apply."
+      }
+    }
+  ]
+}
