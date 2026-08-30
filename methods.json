@@ -9,7 +9,10 @@
       "mechanism": "Pi native LLM summary",
       "expected_compaction": {
         "from_hook": false,
-        "details_keys": ["readFiles", "modifiedFiles"]
+        "details_keys": [
+          "readFiles",
+          "modifiedFiles"
+        ]
       }
     },
     "pi-blackhole": {
@@ -21,7 +24,9 @@
       "mechanism": "extension-provided structural summary; observational memory and cold-load recall are disabled and unmeasured: the benchmark scores compacted context only",
       "expected_compaction": {
         "from_hook": true,
-        "details_match": {"compactor": "blackhole"}
+        "details_match": {
+          "compactor": "blackhole"
+        }
       }
     },
     "pi-smart-compact": {
@@ -43,7 +48,12 @@
       },
       "expected_compaction": {
         "from_hook": true,
-        "details_keys": ["runId", "method", "model", "verified"]
+        "details_keys": [
+          "runId",
+          "method",
+          "model",
+          "verified"
+        ]
       }
     },
     "context-fold": {
@@ -55,7 +65,7 @@
       "mechanism": "extension-provided deterministic summary; recall spool is disabled during questions",
       "expected_compaction": {
         "from_hook": true,
-        "stderr_contains": "[context-fold] det compaction:"
+        "summary_contains": "# Compaction summary (deterministic seed index"
       }
     },
     "pi-cc-compact": {
@@ -67,7 +77,9 @@
       "mechanism": "extension-provided nine-section Claude-derived prompt",
       "expected_compaction": {
         "from_hook": true,
-        "details_match": {"source": "pi-cc-compact"}
+        "details_match": {
+          "source": "pi-cc-compact"
+        }
       }
     },
     "pi-context": {

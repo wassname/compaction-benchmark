@@ -413,9 +413,12 @@ def start_pi(
     model_id: str = MODEL_ID,
     thinking_level: str = THINKING_LEVEL,
     extension: str | None = None,
+    home: Path | None = None,
 ) -> RpcProcess:
     env = os.environ.copy()
     env["PI_CODING_AGENT_DIR"] = str(agent_dir)
+    if home is not None:
+        env["HOME"] = str(home)
     env["PI_SKIP_VERSION_CHECK"] = "1"
     env["PI_TELEMETRY"] = "0"
     rpc = RpcProcess(pi_command(session, provider, model_id, thinking_level, extension), env, artifacts)
@@ -691,6 +694,8 @@ def validate_compaction_handler(
             raise BenchmarkError(f"{fixture.name}/{method_name}: compaction details lack expected keys")
     if "stderr_contains" in expected and expected["stderr_contains"] not in stderr_path.read_text():
         raise BenchmarkError(f"{fixture.name}/{method_name}: expected extension stderr evidence is absent")
+    if "summary_contains" in expected and expected["summary_contains"] not in str(entry.get("summary", "")):
+        raise BenchmarkError(f"{fixture.name}/{method_name}: compaction summary lacks the extension marker")
 
 
 def run_compaction_method(fixture: Fixture, method_name: str, trial: int) -> Path:
@@ -742,9 +747,15 @@ def run_compaction_method(fixture: Fixture, method_name: str, trial: int) -> Pat
     )
     source_ids = {entry.get("id") for entry in fixture.entries}
     compact_agent_dir = isolated_agent_dir(work / "compact-agent")
+    # pi-smart-compact 9.5.0 resolves config from $HOME/.pi/agent/settings.json and ignores
+    # PI_CODING_AGENT_DIR, so the compact phase gets a sandbox HOME; it also keeps extension
+    # cache/metrics writes out of the real home. (claude)
+    compact_home = work / "compact-home"
+    compact_home.mkdir(parents=True, exist_ok=True)
     if "settings" in method:
         write_json(compact_agent_dir / "settings.json", method["settings"])
-    rpc = start_pi(session, compact_agent_dir, compact_artifacts, extension=extension)
+        write_json(compact_home / ".pi" / "agent" / "settings.json", method["settings"])
+    rpc = start_pi(session, compact_agent_dir, compact_artifacts, extension=extension, home=compact_home)
     started = time.perf_counter()
     try:
         before_stats = rpc.command("get_session_stats")["data"]
@@ -1314,6 +1325,20 @@ def grade_baseline(fixture: Fixture, trial: int) -> Path:
     return result_path
 
 
+def grade_method_run(fixture: Fixture, method_name: str, trial: int) -> Path:
+    """Grade a validated method run; refuses unvalidated artifacts. (claude)"""
+    validate_method_run(fixture, method_name, trial)
+    gold = load_gold(fixture)
+    eligible_judges, calibration_id = require_judge_calibration(fixture)
+    work = RUNS / fixture.name / method_name / f"trial-{trial:02d}"
+    answer = json.loads((work / "answer.json").read_text())["answer"]
+    result = grade_answer_panel(fixture, gold, answer, f"method-grade-{method_name}", trial, eligible_judges)
+    result["calibration_id"] = calibration_id
+    result_path = work / "grade.json"
+    write_json(result_path, result)
+    return result_path
+
+
 def fixture_names() -> list[str]:
     return sorted(path.name for path in FIXTURES.iterdir() if (path / "manifest.json").is_file())
 
@@ -1526,7 +1551,7 @@ def calibrate_judges(fixtures: list[Fixture], trial: int) -> dict[str, Any]:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=("gold", "baseline", "grade", "goal1", "validate-goal1", "validate-goal2", "calibrate-judges", "run-method", "validate-run"))
+    parser.add_argument("command", choices=("gold", "baseline", "grade", "goal1", "validate-goal1", "validate-goal2", "calibrate-judges", "run-method", "validate-run", "grade-method"))
     parser.add_argument("fixtures", nargs="*", help="fixture names; default: all")
     parser.add_argument("--trial", type=int, choices=TRIALS, help="run one trial instead of all three")
     parser.add_argument("--method", choices=tuple(load_methods()), help="compaction method for run-method")
@@ -1545,12 +1570,17 @@ def main() -> None:
     if args.command == "validate-goal2":
         print(json.dumps(validate_goal2(args.trial or 1), indent=2))
         return
-    if args.command in {"run-method", "validate-run"}:
+    if args.command in {"run-method", "validate-run", "grade-method"}:
         if not args.method:
             raise BenchmarkError(f"{args.command} requires --method")
         for trial in (args.trial,) if args.trial else TRIALS:
             for fixture in fixtures:
-                result = run_compaction_method(fixture, args.method, trial) if args.command == "run-method" else validate_method_run(fixture, args.method, trial)
+                if args.command == "run-method":
+                    result = run_compaction_method(fixture, args.method, trial)
+                elif args.command == "validate-run":
+                    result = validate_method_run(fixture, args.method, trial)
+                else:
+                    result = grade_method_run(fixture, args.method, trial)
                 print(json.dumps(result, indent=2) if isinstance(result, dict) else result)
         return
     if args.command in {"gold", "goal1"}:
