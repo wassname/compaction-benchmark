@@ -42,6 +42,12 @@ class FixtureTests(unittest.TestCase):
         self.assertIsNone(entries[1]["parentId"])
         self.assertEqual(benchmark.sha256(fixture.source), fixture.source_hash)
 
+    def test_parses_one_json_code_fence(self) -> None:
+        self.assertEqual(
+            benchmark.parse_json('```json\n{"facts": []}\n```', "test"),
+            {"facts": []},
+        )
+
     def test_restores_only_source_whitespace(self) -> None:
         source = "one line wraps\nhere exactly"
         self.assertEqual(
@@ -50,9 +56,9 @@ class FixtureTests(unittest.TestCase):
         )
         self.assertIsNone(benchmark.exact_whitespace_variant(source, "line changed here"))
 
-    def test_rejects_evidence_repeated_in_multiple_entries(self) -> None:
+    def test_accepts_repeated_evidence_when_all_copies_precede_the_boundary(self) -> None:
         fixture = benchmark.Fixture(
-            name="duplicate",
+            name="duplicate-pre",
             directory=Path("."),
             source=Path("source.jsonl"),
             manifest={},
@@ -63,7 +69,22 @@ class FixtureTests(unittest.TestCase):
             source_hash="",
             tail_start_index=2,
         )
-        with self.assertRaisesRegex(benchmark.BenchmarkError, "exactly one source entry"):
+        fixture.locate_evidence("one", "same complete evidence sentence", "pre_first_kept")
+
+    def test_rejects_pre_boundary_evidence_repeated_in_the_tail(self) -> None:
+        fixture = benchmark.Fixture(
+            name="duplicate-tail",
+            directory=Path("."),
+            source=Path("source.jsonl"),
+            manifest={},
+            entries=[
+                {"id": "one", "message": {"content": "same complete evidence sentence"}},
+                {"id": "two", "message": {"content": "same complete evidence sentence"}},
+            ],
+            source_hash="",
+            tail_start_index=1,
+        )
+        with self.assertRaisesRegex(benchmark.BenchmarkError, "repeated in the retained tail"):
             fixture.locate_evidence("one", "same complete evidence sentence", "pre_first_kept")
 
     def test_rejects_observed_partial_evidence_windows(self) -> None:

@@ -150,8 +150,10 @@ class Fixture:
         if evidence is None:
             raise BenchmarkError(f"{self.name}: evidence_quote changes source words in entry {entry_id}")
         matches = self.source_matches(evidence)
-        if len(matches) != 1 or matches[0][1]["id"] != entry_id:
-            raise BenchmarkError(f"{self.name}: evidence_quote does not identify exactly one source entry")
+        if not any(entry["id"] == entry_id for _, entry in matches):
+            raise BenchmarkError(f"{self.name}: evidence_quote is absent from the cited source entry")
+        if required_region == "pre_first_kept" and any(self.region(match_index) == "retained_tail_control" for match_index, _ in matches):
+            raise BenchmarkError(f"{self.name}: pre-boundary evidence_quote is repeated in the retained tail")
         if self.region(index) != required_region:
             raise BenchmarkError(f"{self.name}: evidence_quote is in the wrong source region")
         return index, entry, evidence
@@ -339,8 +341,12 @@ Rules:
 
 
 def parse_json(text: str, context: str) -> dict[str, Any]:
+    stripped = text.strip()
+    lines = stripped.splitlines()
+    if len(lines) >= 3 and lines[0] in {"```", "```json"} and lines[-1] == "```":
+        stripped = "\n".join(lines[1:-1])
     try:
-        value = json.loads(text)
+        value = json.loads(stripped)
     except json.JSONDecodeError as error:
         raise BenchmarkError(f"{context}: model did not return JSON: {text[:500]!r}") from error
     if not isinstance(value, dict):
