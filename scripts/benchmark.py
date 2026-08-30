@@ -379,18 +379,19 @@ def validate_gold(fixture: Fixture, proposed: dict[str, Any], required_region: s
         if not answer_values_are_evidenced(answer, evidence):
             raise BenchmarkError(f"{fixture.name}: fact {number} evidence omits a numeric gold-answer value")
         region = fixture.region(index)
-        validated.append(
-            {
-                "id": f"{required_region}-{number:02d}",
-                "question": question.strip(),
-                "gold_answer": answer.strip(),
-                "source_entry_id": entry["id"],
-                "source_entry_index": index,
-                "evidence_quote": evidence,
-                "model_evidence_candidate": quote,
-                "source_region": region,
-            }
-        )
+        validated_fact = {
+            "id": f"{required_region}-{number:02d}",
+            "question": question.strip(),
+            "gold_answer": answer.strip(),
+            "source_entry_id": entry["id"],
+            "source_entry_index": index,
+            "evidence_quote": evidence,
+            "model_evidence_candidate": quote,
+            "source_region": region,
+        }
+        if "manual_review" in fact:
+            validated_fact["manual_review"] = fact["manual_review"]
+        validated.append(validated_fact)
     return validated
 
 
