@@ -182,7 +182,7 @@
     },
     {
       "id": "fact-11",
-      "question": "What remains before the dev3 method ports count as finished?",
+      "question": "In the plan-update message, what did the assistant say the work now requires?",
       "gold_answer": "Full descending walks with a raw output audit, judge results, and a generated table, plot, and dev3 commits.",
       "source_entry_id": "8ebc27d2",
       "source_entry_index": 401,
@@ -194,7 +194,7 @@
         "evidence_supports_gold": true,
         "question_matches_gold": true,
         "tail_leakage_review": "not_applicable_tail_control",
-        "note": "Re-anchored 2026-08-30 (claude): the prior span (entry 404) did not contain the 'output-audited and export a result CSV' clauses added by the earlier widening; 'result CSV' appears only in entries 140/142, a mid-session deliverable list. Re-anchored to entry 401's contiguous enumeration, which the question's 'count as finished' framing points at; 401 lies inside the retained tail (bracketed by tail controls at 388/404)."
+        "note": "Re-anchored 2026-08-30 (claude): the prior span (entry 404) did not contain the 'output-audited and export a result CSV' clauses added by the earlier widening; 'result CSV' appears only in entries 140/142, a mid-session deliverable list. Re-anchored to entry 401's contiguous enumeration, which the question's 'count as finished' framing points at; 401 lies inside the retained tail (bracketed by tail controls at 388/404). Question pinned 2026-08-30 (claude): the open question admitted both entry 401's enumeration and the final plan's goal-5 task list (entry 416 adds 'export only their new rows'), so worker answers oscillated — v2 omitted export and failed, v3 included it and drew 2v3 distorted. The question now names the plan-update message so only 401's utterance is responsive."
       }
     },
     {
@@ -233,7 +233,7 @@
     },
     {
       "id": "fact-14",
-      "question": "Why could the MLP-up C=1 smoke not determine coherence?",
+      "question": "The plan log says the MLP-up C=1 smoke cannot determine coherence — what reason does the log record?",
       "gold_answer": "It used only eight generated tokens.",
       "source_entry_id": "998cc42f",
       "source_entry_index": 416,
@@ -245,7 +245,7 @@
         "evidence_supports_gold": true,
         "question_matches_gold": true,
         "tail_leakage_review": "not_applicable_tail_control",
-        "note": "Retained-tail control; leakage review does not apply."
+        "note": "Retained-tail control; leakage review does not apply. Question pinned 2026-08-30 (claude): the v3 worker answered 'why' with the truncation/unfinished mechanism (consistent with pre-tail tokens=8 stats at entries 279/280 but beyond the cited log line) and drew 1v4 distorted; compacted candidates lose those pre-tail stats, so the item must ask for the log's recorded reason, not the mechanism."
       }
     },
     {
