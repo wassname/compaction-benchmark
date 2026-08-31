@@ -22,6 +22,9 @@
       "source_url": "https://github.com/k0valik/pi-blackhole",
       "npm_integrity": "sha512-19NvAUBHiZLrOWzsb77md62YojkhU4Vzd6ziSE+wG4zd/fVS7SsDpflbojtOwP2s2Qa3HCRnfII8Zu4Ae3Slgw==",
       "mechanism": "extension-provided structural summary; observational memory and cold-load recall are disabled and unmeasured: the benchmark scores compacted context only",
+      "blackhole_config": {
+        "tailBehavior": "pi-default"
+      },
       "expected_compaction": {
         "from_hook": true,
         "details_match": {

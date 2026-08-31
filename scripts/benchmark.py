@@ -29,9 +29,9 @@ EVALUATORS = ROOT / "data" / "evaluators"
 OUTPUTS = ROOT / "outputs" / "benchmark"
 METHODS_PATH = ROOT / "methods.json"
 HOST_AGENT_DIR = Path.home() / ".pi" / "agent"
-MODEL_PROVIDER = "openai-codex"
-MODEL_ID = "gpt-5.6-terra"
-THINKING_LEVEL = "high"
+MODEL_PROVIDER = "openrouter"
+MODEL_ID = "deepseek/deepseek-v4-flash-0731:fp8"
+THINKING_LEVEL = "medium"
 JUDGE_PANEL = (
     ("openrouter", "qwen/qwen3.7-flash"),
     ("openrouter", "deepseek/deepseek-v4-flash-0731"),
@@ -755,6 +755,11 @@ def run_compaction_method(fixture: Fixture, method_name: str, trial: int) -> Pat
     if "settings" in method:
         write_json(compact_agent_dir / "settings.json", method["settings"])
         write_json(compact_home / ".pi" / "agent" / "settings.json", method["settings"])
+    if "blackhole_config" in method:
+        # pi-blackhole reads ~/.pi/agent/pi-blackhole/pi-blackhole-config.json (HOME-based), not PI_CODING_AGENT_DIR
+        cfg = method["blackhole_config"]
+        write_json(compact_home / ".pi" / "agent" / "pi-blackhole" / "pi-blackhole-config.json", cfg)
+        write_json(compact_agent_dir / "pi-blackhole" / "pi-blackhole-config.json", cfg)
     rpc = start_pi(session, compact_agent_dir, compact_artifacts, extension=extension, home=compact_home)
     started = time.perf_counter()
     try:
