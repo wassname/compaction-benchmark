@@ -13,3 +13,9 @@ slice-before-first source name:
 fast-dev-run:
     mkdir -p /tmp/empty-sessions
     uv run scripts/01_find_candidate_sessions.py --sessions /tmp/empty-sessions --limit 1
+
+run:
+    uv run python scripts/benchmark.py run-missing
+
+results:
+    uv run python scripts/06_results.py

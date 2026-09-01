@@ -108,6 +108,56 @@
       "source_url": "https://github.com/nicobailon/pi-custom-compaction",
       "npm_integrity": "sha512-00ZhXK76CtnM6BFn4TVOyVPCKDpOaXd1NZKJLul3dbqKG+ABO80rnN99cQTGOAS0KxAtjuwSARhjUYpR7SPPJA==",
       "mechanism": "configured summary model, reasoning level, prompt template, and retention"
+    },
+    "pi-custom-handoff": {
+      "classification": "comparable",
+      "protocol": "manual_rpc_compact",
+      "extension": "pi-custom-compaction@0.2.5",
+      "source_url": "https://github.com/nicobailon/pi-custom-compaction",
+      "npm_integrity": "sha512-00ZhXK76CtnM6BFn4TVOyVPCKDpOaXd1NZKJLul3dbqKG+ABO80rnN99cQTGOAS0KxAtjuwSARhjUYpR7SPPJA==",
+      "mechanism": "DeepSeek medium custom compaction using the handoff skill format",
+      "custom_policy": {
+        "enabled": true,
+        "models": [
+          {
+            "model": "openrouter/deepseek/deepseek-v4-flash-0731:fp8",
+            "thinkingLevel": "medium"
+          }
+        ]
+      },
+      "custom_template": "prompts/compaction/handoff.md",
+      "expected_compaction": {
+        "from_hook": true,
+        "details_keys": [
+          "readFiles",
+          "modifiedFiles"
+        ]
+      }
+    },
+    "pi-custom-lab-report": {
+      "classification": "comparable",
+      "protocol": "manual_rpc_compact",
+      "extension": "pi-custom-compaction@0.2.5",
+      "source_url": "https://github.com/nicobailon/pi-custom-compaction",
+      "npm_integrity": "sha512-00ZhXK76CtnM6BFn4TVOyVPCKDpOaXd1NZKJLul3dbqKG+ABO80rnN99cQTGOAS0KxAtjuwSARhjUYpR7SPPJA==",
+      "mechanism": "DeepSeek medium custom compaction using a lab-report format",
+      "custom_policy": {
+        "enabled": true,
+        "models": [
+          {
+            "model": "openrouter/deepseek/deepseek-v4-flash-0731:fp8",
+            "thinkingLevel": "medium"
+          }
+        ]
+      },
+      "custom_template": "prompts/compaction/lab-report.md",
+      "expected_compaction": {
+        "from_hook": true,
+        "details_keys": [
+          "readFiles",
+          "modifiedFiles"
+        ]
+      }
     }
   }
 }

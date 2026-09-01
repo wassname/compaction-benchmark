@@ -29,20 +29,18 @@ Latency, compaction size, and output tokens are recorded. They are diagnostics, 
 
 The target session must not receive the gold facts before compaction. A pre-compaction request for facts would create a recent message that may be preserved verbatim and inflate recall.
 
-## Interim results — cheap pin `deepseek 0731:fp8 medium` (2026-08-31)
+## What pre and tail mean
 
-*One row per compaction method, averaged over graded trials. Ranked by pre-boundary recall; tail is a continuity control, not summary quality.*
+A fixture is one historical session sliced at `first_kept_entry_id` (`manifest.json`). Pi keeps the tail verbatim and replaces the prefix with one summary. `gold.json` has 20 facts: 10 `pre` (before the cut, seen only if the summary wrote them — headline) and 10 `tail` (after the cut, kept as text — control, should be 10/10). `retained = pre + tail` (10+10 = 20). `pre` low = summary omitted prefix facts. `tail` low = tail was truncated.
 
-| method | n | retained↑ | pre↑ | tail↑ | notes |
-|---|---|---:|---:|---:|:---|
-| *baseline (Terra/high reference)* | 3 | **19.3** | **9.3** | **10.0** | `uncompacted-baseline` `20+19+19`/60, `outputs/benchmark/run-matrix2.log` |
-| `pi-smart-compact@9.5.0` | 3 | **19.0** | 9.0 | **10.0** | only `lucid3-first` validates (9.0/10 pre) — `lucid-aug20`/`jsteer` `fromHook false` |
-| `pi-default` | 9 | 15.0 | 6.2 | 8.8 | `pi native` `fromHook false` |
-| `pi-cc-compact@0.1.0` | 8 | 15.5 | 6.0 | 9.4 | `lucid-aug20 t3` grade `0/5` seats missing — avg over 8/9 |
-| `pi-blackhole@0.4.10` | 9 | 13.0 | 3.2 | 9.8 | `blackhole tail pi-default` fixed `minimal`→`pi-default` 6/10→10/10 on `lucid-aug20` |
-| `context-fold@0.3.2` | 9 | 11.3 | 3.1 | 8.2 | `summary_contains` seed-index, spool disabled |
+```
+0 .......... 212|cut|213 .......... 318   lucid-aug20 319 entries, 67,799 tokens
+        pre 10 facts |      tail 10 facts
+```
 
-<sub>Table: `pre↑` is `pre_first_kept` retained/10 (headline), `tail↑` is `retained_tail_control` retained/10 (control). Source `data/runs/*/trial-0*/grade.json` vs `data/fixtures/*/gold.json` (`source_region`). `n` = graded trials. `lucid-aug20` 67k, `jsteer` 205k, `lucid3` 83 entries. Cheap pin `openrouter/deepseek/deepseek-v4-flash-0731:fp8` `medium`, `blackhole tail pi-default`. Full matrix `3×5×3=45` cells, `run-matrix2.log` `DONE2 2026-08-31T23:02`.</sub>
+## Results
+
+The DeepSeek-only table is in [`RESULTS.md`](RESULTS.md). It gives each method's graded runs, prefix recall, retained-tail control, and named missing grades.
 
 ## Candidate sessions
 
