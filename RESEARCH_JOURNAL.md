@@ -8,7 +8,7 @@ The benchmark runs a forced Pi compaction, resumes the session, then asks 20 fix
 
 The three source sessions and all run transcripts are ignored. The tracked `data/fixtures/*/gold.json` files contain the 20 source-derived questions and evidence quotes for each fixture.
 
-Smart Compact has 3/9 grades, all from `lucid3-first`. Its valid runs retained about 93k tokens, compared with 17–20k for the other methods on that fixture. Do not compare its mean with the complete rows.
+Smart Compact is excluded from the public ranking. Its native-hook default retained 91,730 raw-tail tokens and moved the cut earlier than the fixture boundary. Its `pre` score therefore includes raw material that other methods summarized. A fair Smart Compact run needs the extension's manual path or another fixed output budget.
 
 The named missing grades are saved in ignored `outputs/benchmark/*/failure.json`. They are excluded from means.
 
