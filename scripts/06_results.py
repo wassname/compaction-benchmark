@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the DeepSeek compaction results table from saved panel grades. (claude)"""
+"""Generate the public result table from saved grades. (PI[openai-codex])"""
 from __future__ import annotations
 
 import json
@@ -9,82 +9,82 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 RUNS = ROOT / "data" / "runs"
 OUTPUTS = ROOT / "outputs" / "benchmark"
-RESULTS = ROOT / "RESULTS.md"
+README = ROOT / "README.md"
 METHODS = json.loads((ROOT / "methods.json").read_text())["methods"]
 FIXTURES = sorted(path.name for path in (ROOT / "data" / "fixtures").iterdir() if (path / "gold.json").is_file())
 
+LABELS = {
+    "uncompacted-baseline": "baseline, no compaction",
+    "pi-default": "Pi default",
+    "pi-smart-compact": "[Smart Compact](https://github.com/alpertarhan/pi-smart-compact)",
+    "pi-cc-compact": "[CC Compact](https://github.com/pinion05/pi-cc-compact)",
+    "pi-custom-lab-report": "[Lab report](https://github.com/nicobailon/pi-custom-compaction)",
+    "pi-custom-handoff": "[Handoff](https://github.com/nicobailon/pi-custom-compaction)",
+    "pi-blackhole": "[Blackhole](https://github.com/k0valik/pi-blackhole)",
+    "context-fold": "[Context Fold](https://github.com/Middlewatch/context-fold)",
+}
 
-def grade_values(path: Path) -> tuple[int, int, int]:
-    grade = json.loads(path.read_text())
-    facts = grade["facts"]
+
+def values(path: Path) -> tuple[int, int, int]:
+    facts = json.loads(path.read_text())["facts"]
     retained = sum(fact["grade"] == "retained" for fact in facts)
     pre = sum(fact["grade"] == "retained" and fact["id"] <= "fact-10" for fact in facts)
     tail = sum(fact["grade"] == "retained" and fact["id"] > "fact-10" for fact in facts)
     return retained, pre, tail
 
 
-def mean_sd(values: list[int]) -> str:
-    mean = statistics.mean(values)
-    sd = statistics.stdev(values) if len(values) > 1 else 0.0
-    return f"{mean:.1f}±{sd:.1f}"
+def mean_sd(items: list[int]) -> str:
+    return f"{statistics.mean(items):.1f}±{statistics.stdev(items) if len(items) > 1 else 0.0:.1f}"
 
 
-def row(method: str, label: str, intended: int) -> tuple[float, str, list[str]]:
-    values: list[tuple[int, int, int]] = []
-    missing: list[str] = []
-    for fixture in FIXTURES:
-        trials = (1,) if method == "uncompacted-baseline" else (1, 2, 3)
-        for trial in trials:
-            grade = RUNS / fixture / method / f"trial-{trial:02d}" / "grade.json"
-            if grade.is_file():
-                values.append(grade_values(grade))
-                continue
-            failure = OUTPUTS / fixture / method / f"trial-{trial:02d}" / "failure.json"
-            error = json.loads(failure.read_text())["error"] if failure.is_file() else "no grade.json"
-            missing.append(f"`data/runs/{fixture}/{method}/trial-{trial:02d}/grade.json`: {error}")
-    note = f"{len(missing)} missing grade(s); see below" if missing else ""
-    if not values:
-        return -1.0, f"| `{label}` | 0/{intended} | — | — | — | {note} |", missing
-    retained, pre, tail = zip(*values)
-    return statistics.mean(pre), f"| `{label}` | {len(values)}/{intended} | {mean_sd(list(retained))} | {mean_sd(list(pre))} | {mean_sd(list(tail))} | {note} |", missing
+def grade_paths(method: str) -> list[Path]:
+    trials = (1,) if method == "uncompacted-baseline" else (1, 2, 3)
+    return [RUNS / fixture / method / f"trial-{trial:02d}" / "grade.json" for fixture in FIXTURES for trial in trials]
+
+
+def row(method: str) -> tuple[float, str]:
+    paths = grade_paths(method)
+    scored = [values(path) for path in paths if path.is_file()]
+    intended = len(paths)
+    retained, pre, tail = zip(*scored)
+    missing = intended - len(scored)
+    if method == "pi-smart-compact":
+        compact = RUNS / "lucid3-first" / method / "trial-01" / "compaction.json"
+        kept = round(json.loads(compact.read_text())["response"]["estimatedTokensAfter"] / 1000)
+        note = f"one session; six native fallbacks; kept {kept}k tokens"
+    elif missing:
+        note = f"{missing} grade missing"
+    elif method == "pi-blackhole":
+        note = "`tailBehavior=pi-default`"
+    else:
+        note = ""
+    return statistics.mean(pre), f"| {LABELS[method]} | {len(scored)}/{intended} | {mean_sd(list(retained))} | {mean_sd(list(pre))} | {mean_sd(list(tail))} | {note} |"
 
 
 def main() -> None:
-    rows = [row("uncompacted-baseline", "baseline — no compaction", len(FIXTURES))]
-    for name, method in METHODS.items():
-        if method["classification"].startswith("comparable"):
-            rows.append((name, *row(name, name, len(FIXTURES) * 3)))
-    baseline = rows[:1]
-    ranked = sorted(rows[1:], key=lambda item: item[1], reverse=True)
-    lines = [
-        "# DeepSeek compaction results",
+    methods = ["uncompacted-baseline", *[name for name, spec in METHODS.items() if spec["classification"].startswith("comparable")]]
+    rows = [row(method) for method in methods]
+    baseline, compared = rows[0], sorted(rows[1:], key=lambda item: item[0], reverse=True)
+    README.write_text("\n".join([
+        "# Pi compaction benchmark",
         "",
-        "All answers use `openrouter/deepseek/deepseek-v4-flash-0731:fp8` at `medium`.",
-        "`pre` is the ten facts before Pi's cut. `tail` is the ten facts kept after the cut. The table sorts by mean `pre`.",
+        "Pi default and [CC Compact](https://github.com/pinion05/pi-cc-compact) are tied for the best complete result. They retain about 6 of 10 facts from before compaction. [Smart Compact](https://github.com/alpertarhan/pi-smart-compact) scored 9 of 10, but only ran on one of three sessions and kept about 93k tokens. It is not a fair winner yet.",
         "",
-        "| method | n | retained /20 | pre /10 | tail /10 | missing or fallback |",
+        "This benchmark starts with a real Pi session. A method replaces old messages with a summary. The resumed model then answers 20 questions. `pre` is 10 facts from before the summary. `tail` is 10 facts Pi kept after the cut. The table sorts by `pre`.",
+        "",
+        "All answer calls use `openrouter/deepseek/deepseek-v4-flash-0731:fp8` at `medium`.",
+        "",
+        "| method | n | retained /20 | pre /10 | tail /10 | note |",
         "|---|---:|---:|---:|---:|---|",
-        baseline[0][1],
-        *[item[2] for item in ranked],
+        baseline[1],
+        *[item[1] for item in compared],
         "",
-        "`n` is graded runs / intended runs. Values are mean±sample SD. A missing grade is not included in a mean.",
+        "`n` is graded runs / intended runs. Values are mean±sample SD. Missing grades are excluded from means.",
         "",
-        "## Missing grades",
+        "<!-- PI[openai-codex] -->",
         "",
-        *[f"- {missing}" for item in baseline for missing in item[2]],
-        *[f"- {missing}" for item in ranked for missing in item[3]],
-        "",
-        "## Other compaction designs",
-        "",
-        "| method | protocol | reason outside headline ranking |",
-        "|---|---|---|",
-        "| `pi-async-compaction` | early scheduling | uses Pi's native summary; changes timing, not summary method |",
-        "| `pi-session-handover` / Agenticoding handoff | new-session or task-only handoff | does not retain the same compacted context |",
-        "| provider-native compaction | provider protocol | needs its own run and grading path |",
-        "| retrieval/memory systems | retrieval | recall tools are disabled in this benchmark |",
-    ]
-    RESULTS.write_text("\n".join(lines) + "\n")
-    print(RESULTS)
+    ]))
+    print(README)
 
 
 if __name__ == "__main__":
