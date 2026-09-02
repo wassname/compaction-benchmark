@@ -1,8 +1,15 @@
 # Pi compaction benchmark
 
-Pi default and [CC Compact](https://github.com/pinion05/pi-cc-compact) are tied for the best complete result. They retain about 6 of 10 facts from before compaction.
+I wanted to know which compaction is the best for pi. So I evaluated this way
 
-This benchmark starts with a real Pi session. A method replaces old messages with a summary. The resumed model then answers 20 questions. `pre` is 10 facts from before the summary. The table sorts by `pre`.
+- find some complex sessions
+- rewind to the first commit
+- ask "What are 10 critical facts"
+- for all pi compaction candidated,
+  - copy the session and compact
+  - ask them question about the facts, judge if they recalled them
+
+So you can see below that the baseline is "don't compact at all" and that recalls 9/10 facts, while pi default recalls 6/10 facts (worse). But of course we do need to compact or we will get context rot, or hit the token limit.
 
 All answer calls use `openrouter/deepseek/deepseek-v4-flash-0731:fp8` at `medium`.
 
