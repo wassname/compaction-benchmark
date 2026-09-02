@@ -82,27 +82,21 @@ def main() -> None:
     ]
     rows = [row(method) for method in methods]
     baseline, compared = rows[0], sorted(rows[1:], key=lambda item: item[0], reverse=True)
-    README.write_text("\n".join([
-        "# Pi compaction benchmark",
-        "",
-        "Pi default and [CC Compact](https://github.com/pinion05/pi-cc-compact) are tied for the best complete result. The Kimi K3 and DeepSeek high rows are pending.",
-        "",
-        "This benchmark starts with a real Pi session. A method replaces old messages with a summary. The resumed model then answers 20 questions. `pre` is 10 facts from before the summary. The table sorts by `pre`.",
-        "",
-        "All answer calls use `openrouter/deepseek/deepseek-v4-flash-0731:fp8` at `medium`.",
-        "",
-        "| method | pre /10 | tokens after | n | retained /20 | note |",
+    table = "\n".join([
+        "| method | pre /10 | context after | n | retained /20 | note |",
         "|---|---:|---:|---:|---:|---|",
         baseline[1],
         *[item[1] for item in compared],
         "",
-        "`tokens after` is estimated session context after compaction. `n` is graded runs / intended runs. Values are mean±sample SD. Missing grades are excluded from means.",
+        "`context after` is Pi's estimated retained raw context plus summary. `n` is graded runs / intended runs. Values are mean±sample SD. Missing grades are excluded from means.",
         "",
-        "[Smart Compact](https://github.com/alpertarhan/pi-smart-compact) uses its manual `fast` command. It reached 18k tokens on one fixture but failed to create a compaction in six runs.",
+        "[Smart Compact](https://github.com/alpertarhan/pi-smart-compact) uses its manual `fast` command. It reached 18k context on one fixture but failed to create a compaction in six runs.",
         "",
-        "<!-- PI[openai-codex] -->",
-        "",
-    ]))
+    ])
+    current = README.read_text()
+    start = current.index("| method |")
+    end = current.index("<!-- PI[openai-codex] -->", start)
+    README.write_text(current[:start] + table + current[end:])
     print(README)
 
 
