@@ -211,6 +211,42 @@
           "modifiedFiles"
         ]
       }
+    },
+    "pi-custom-default-kimi-k3-high": {
+      "classification": "comparable",
+      "protocol": "manual_rpc_compact",
+      "extension": "pi-custom-compaction@0.2.5",
+      "source_url": "https://github.com/nicobailon/pi-custom-compaction",
+      "npm_integrity": "sha512-00ZhXK76CtnM6BFn4TVOyVPCKDpOaXd1NZKJLul3dbqKG+ABO80rnN99cQTGOAS0KxAtjuwSARhjUYpR7SPPJA==",
+      "mechanism": "Pi native compaction prompt with Kimi K3 high",
+      "custom_policy": {
+        "enabled": true,
+        "models": [
+          {
+            "model": "openrouter/moonshotai/kimi-k3",
+            "thinkingLevel": "high"
+          }
+        ]
+      },
+      "expected_compaction": {
+        "from_hook": true,
+        "details_keys": [
+          "readFiles",
+          "modifiedFiles"
+        ]
+      }
+    },
+    "council-default": {
+      "classification": "comparable",
+      "protocol": "manual_rpc_compact",
+      "extension_path": "extensions/council-compaction.ts",
+      "mechanism": "Hermes-style MoA: Kimi K3, Gemini 3 Flash, and DeepSeek Flash high-reasoning references guide a GPT-5.6 Luna high-reasoning Pi compaction",
+      "expected_compaction": {
+        "from_hook": true,
+        "details_match": {
+          "source": "council-compaction"
+        }
+      }
     }
   }
 }

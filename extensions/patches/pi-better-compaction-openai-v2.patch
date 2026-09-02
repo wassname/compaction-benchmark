@@ -1,0 +1,272 @@
+diff --git a/src/compact-client-v2.ts b/src/compact-client-v2.ts
+index 607e16f..e6a6a91 100644
+--- a/src/compact-client-v2.ts
++++ b/src/compact-client-v2.ts
+@@ -308,6 +308,7 @@ export async function executeV2Compaction(
+ 	const requestBody = {
+ 		...request,
+ 		input: [...request.input, { type: "compaction_trigger" }],
++		store: false,
+ 		stream: true,
+ 	};
+ 
+diff --git a/src/payload-rewrite.ts b/src/payload-rewrite.ts
+index fdb7761..dc8d133 100644
+--- a/src/payload-rewrite.ts
++++ b/src/payload-rewrite.ts
+@@ -11,6 +11,7 @@ import type { NativeCompactionEntry } from "./types";
+ import {
+ 	compareResponsesInputParity,
+ 	serializeMessagesToResponsesInput,
++	type SerializeResponsesMessagesOptions,
+ 	type ResponsesInputContentItem,
+ 	type ResponsesInputItem,
+ 	type ResponsesInputMessageItem,
+@@ -227,6 +228,31 @@ function areEquivalentValues(left: unknown, right: unknown): boolean {
+ 	return false;
+ }
+ 
++function firstDifference(left: unknown, right: unknown, path = "input"): string | undefined {
++	if (Object.is(left, right)) return undefined;
++	if (Array.isArray(left) || Array.isArray(right)) {
++		if (!Array.isArray(left) || !Array.isArray(right)) return `${path}: array type differs`;
++		if (left.length !== right.length) return `${path}: length ${left.length} != ${right.length}`;
++		for (let index = 0; index < left.length; index++) {
++			const difference = firstDifference(left[index], right[index], `${path}[${index}]`);
++			if (difference) return difference;
++		}
++		return undefined;
++	}
++	if (isRecord(left) || isRecord(right)) {
++		if (!isRecord(left) || !isRecord(right)) return `${path}: object type differs`;
++		const leftKeys = Object.keys(left).sort();
++		const rightKeys = Object.keys(right).sort();
++		if (!areEquivalentValues(leftKeys, rightKeys)) return `${path}: keys differ`;
++		for (const key of leftKeys) {
++			const difference = firstDifference(left[key], right[key], `${path}.${key}`);
++			if (difference) return difference;
++		}
++		return undefined;
++	}
++	return `${path}: values differ`;
++}
++
+ function toBranchSummaryMessage(entry: BranchSummaryEntry): AgentMessage {
+ 	return {
+ 		role: "branchSummary",
+@@ -438,34 +464,69 @@ function buildNativeReplaySegmentsInternal<TApi extends Api>(args: {
+ 	const preCompactionKeptMessages = collectReplayMessages(preCompactionEntries);
+ 	const postCompactionTailMessages = collectReplayMessages(postCompactionEntries);
+ 	const compactionSummaryMessage = createCompactionSummaryAgentMessage(args.compactionEntry);
+-	const serializedPiHistoryInput = serializeMessagesToResponsesInput(args.model, [
+-		compactionSummaryMessage,
+-		...preCompactionKeptMessages,
+-		...postCompactionTailMessages,
+-	]);
+-	const originalPiReplayInput: ResponsesInputItem[] = [
++	const replayMessages = [compactionSummaryMessage, ...preCompactionKeptMessages, ...postCompactionTailMessages];
++	let replaySerializationOptions: SerializeResponsesMessagesOptions = {};
++	let omittedInitialPreCompactionItem = 0;
++	let serializedPiHistoryInput = serializeMessagesToResponsesInput(args.model, replayMessages);
++	let originalPiReplayInput: ResponsesInputItem[] = [
+ 		...freshPreamble.leadingInput,
+ 		...serializedPiHistoryInput,
+ 		...freshPreamble.trailingInput,
+ 	];
+ 
+ 	if (!areEquivalentValues(args.payload.input, originalPiReplayInput)) {
+-		const parity = compareResponsesInputParity(args.payload.input, originalPiReplayInput);
+-		return {
+-			ok: false,
+-			reason: "expected-pi-replay-mismatch",
+-			parity: {
+-				actual: parity.actual,
+-				expected: parity.expected,
+-				mismatches: parity.mismatches,
+-			},
+-		};
++		let parity = compareResponsesInputParity(args.payload.input, originalPiReplayInput);
++		if (parity.mismatches.length > 0) {
++			replaySerializationOptions = { replayThinkingAsAssistantText: true };
++			serializedPiHistoryInput = serializeMessagesToResponsesInput(args.model, replayMessages, replaySerializationOptions);
++			originalPiReplayInput = [
++				...freshPreamble.leadingInput,
++				...serializedPiHistoryInput,
++				...freshPreamble.trailingInput,
++			];
++			parity = compareResponsesInputParity(args.payload.input, originalPiReplayInput);
++			const firstPreCompactionMessage = preCompactionKeptMessages[0];
++			const firstPreCompactionIsThinking = firstPreCompactionMessage?.role === "assistant"
++				&& firstPreCompactionMessage.content[0]?.type === "thinking";
++			if (parity.mismatches.length > 0 && firstPreCompactionIsThinking) {
++				const compactionSummaryCount = serializeMessagesToResponsesInput(
++					args.model,
++					[compactionSummaryMessage],
++					replaySerializationOptions,
++				).length;
++				const initialPreCompactionIndex = freshPreamble.leadingInput.length + compactionSummaryCount;
++				const initialPreCompactionItem = originalPiReplayInput[initialPreCompactionIndex];
++				if (isRecord(initialPreCompactionItem) && initialPreCompactionItem.type === "message") {
++					const withoutInitialPreCompactionItem = [
++						...originalPiReplayInput.slice(0, initialPreCompactionIndex),
++						...originalPiReplayInput.slice(initialPreCompactionIndex + 1),
++					];
++					const omissionParity = compareResponsesInputParity(args.payload.input, withoutInitialPreCompactionItem);
++					if (omissionParity.mismatches.length === 0) {
++						originalPiReplayInput = withoutInitialPreCompactionItem;
++						omittedInitialPreCompactionItem = 1;
++						parity = omissionParity;
++					}
++				}
++			}
++			if (parity.mismatches.length > 0) {
++				return {
++					ok: false,
++					reason: "expected-pi-replay-mismatch",
++					parity: {
++						actual: parity.actual,
++						expected: parity.expected,
++						mismatches: [...parity.mismatches, firstDifference(args.payload.input, originalPiReplayInput) ?? "unclassified value mismatch"],
++					},
++				};
++			}
++		}
+ 	}
+ 
+ 	const freshPreambleCount = freshPreamble.leadingInput.length;
+ 	const trailingPreambleCount = freshPreamble.trailingInput.length;
+-	const compactionSummaryCount = serializeMessagesToResponsesInput(args.model, [compactionSummaryMessage]).length;
+-	const preCompactionKeptCount = serializeMessagesToResponsesInput(args.model, preCompactionKeptMessages).length;
++	const compactionSummaryCount = serializeMessagesToResponsesInput(args.model, [compactionSummaryMessage], replaySerializationOptions).length;
++	const preCompactionKeptCount = serializeMessagesToResponsesInput(args.model, preCompactionKeptMessages, replaySerializationOptions).length - omittedInitialPreCompactionItem;
+ 	const tailStartIndex = freshPreambleCount + compactionSummaryCount + preCompactionKeptCount;
+ 	const tailEndIndex = args.payload.input.length - trailingPreambleCount;
+ 	const actualCompactionSummary = cloneResponsesInputSlice(
+diff --git a/src/serializer.ts b/src/serializer.ts
+index 61a9404..cc3406a 100644
+--- a/src/serializer.ts
++++ b/src/serializer.ts
+@@ -115,6 +115,7 @@ export type NativeCompactionRequestBody = {
+ export type SerializeResponsesMessagesOptions = {
+ 	instructions?: string;
+ 	includeInstructionsInInput?: boolean;
++	replayThinkingAsAssistantText?: boolean;
+ };
+ 
+ export type ResponsesParityReport = {
+@@ -191,7 +192,7 @@ export function serializeMessagesToResponsesInput<TApi extends Api>(
+ 		}
+ 
+ 		if (message.role === "assistant") {
+-			const items = serializeAssistantMessage(message, messageIndex);
++			const items = serializeAssistantMessage(message, messageIndex, options.replayThinkingAsAssistantText);
+ 			if (items.length > 0) {
+ 				input.push(...items);
+ 			}
+@@ -372,11 +373,19 @@ function serializeUserContentItem<TApi extends Api>(
+ 	];
+ }
+ 
+-function serializeAssistantMessage(message: AssistantMessage, messageIndex: number): ResponsesInputItem[] {
++function serializeAssistantMessage(
++	message: AssistantMessage,
++	messageIndex: number,
++	replayThinkingAsAssistantText = false,
++): ResponsesInputItem[] {
+ 	const items: ResponsesInputItem[] = [];
+ 
+-	for (const block of message.content) {
++	for (const [blockIndex, block] of message.content.entries()) {
+ 		if (block.type === "thinking") {
++			if (replayThinkingAsAssistantText) {
++				items.push(createAssistantOutputItem(block.thinking, messageIndex * 1_000 + blockIndex));
++				continue;
++			}
+ 			const reasoningItem = parseReasoningItem(block);
+ 			if (reasoningItem) {
+ 				items.push(reasoningItem);
+@@ -385,15 +394,9 @@ function serializeAssistantMessage(message: AssistantMessage, messageIndex: numb
+ 		}
+ 
+ 		if (block.type === "text") {
+-			const signature = parseTextSignature(block.textSignature);
+-			items.push({
+-				type: "message",
+-				role: "assistant",
+-				content: [{ type: "output_text", text: sanitizeSurrogates(block.text), annotations: [] }],
+-				status: "completed",
+-				id: normalizeAssistantMessageId(signature?.id, messageIndex),
+-				phase: signature?.phase,
+-			});
++			const signature = replayThinkingAsAssistantText ? undefined : parseTextSignature(block.textSignature);
++			const outputIndex = replayThinkingAsAssistantText ? messageIndex * 1_000 + blockIndex : messageIndex;
++			items.push(createAssistantOutputItem(block.text, outputIndex, signature));
+ 			continue;
+ 		}
+ 
+@@ -410,6 +413,21 @@ function serializeAssistantMessage(message: AssistantMessage, messageIndex: numb
+ 	return items;
+ }
+ 
++function createAssistantOutputItem(
++	text: string,
++	messageIndex: number,
++	signature?: ParsedTextSignature,
++): ResponsesAssistantOutputItem {
++	return {
++		type: "message",
++		role: "assistant",
++		content: [{ type: "output_text", text: sanitizeSurrogates(text), annotations: [] }],
++		status: "completed",
++		id: normalizeAssistantMessageId(signature?.id, messageIndex),
++		phase: signature?.phase,
++	};
++}
++
+ function serializeToolResultMessage<TApi extends Api>(
+ 	message: ToolResultMessage,
+ 	model: Model<TApi>,
+diff --git a/src/unit.test.ts b/src/unit.test.ts
+index 08b2584..9be1629 100644
+--- a/src/unit.test.ts
++++ b/src/unit.test.ts
+@@ -140,6 +140,39 @@ test("serializer sanitizes unpaired surrogates in instructions and message conte
+ 	expect(JSON.stringify(inputOnly)).not.toContain("\\udc00");
+ });
+ 
++test("replay serializer renders signed thinking as Pi assistant text", () => {
++	const messages = [
++		{
++			role: "assistant",
++			provider: baseModel.provider,
++			api: baseModel.api,
++			model: baseModel.id,
++			stopReason: "stop",
++			content: [
++				{
++					type: "thinking",
++					thinking: "Inspecting replay parity.",
++					thinkingSignature: JSON.stringify({ type: "reasoning", encrypted_content: "opaque" }),
++				},
++				{ type: "toolCall", id: "call_1|fc_1", name: "read", arguments: { path: "README.md" } },
++			],
++			timestamp: 1,
++		},
++	];
++
++	expect(serializeMessagesToResponsesInput(baseModel as never, messages as never)[0]).toMatchObject({
++		type: "reasoning",
++	});
++	expect(
++		serializeMessagesToResponsesInput(baseModel as never, messages as never, {
++			replayThinkingAsAssistantText: true,
++		}),
++	).toMatchObject([
++		{ type: "message", role: "assistant", content: [{ type: "output_text", text: "Inspecting replay parity." }] },
++		{ type: "function_call", call_id: "call_1", name: "read" },
++	]);
++});
++
+ test("extractCompactedSummaryText joins assistant output_text blocks and skips opaque items", () => {
+ 	expect(
+ 		extractCompactedSummaryText([

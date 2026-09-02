@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "pi_version": "0.84.4",
+  "model": {
+    "provider": "openai-codex",
+    "id": "gpt-5.6-terra",
+    "api": "openai-codex-responses",
+    "thinking": "high"
+  },
+  "methods": {
+    "pi-default-text": {
+      "classification": "comparable",
+      "extension": null,
+      "mechanism": "Pi text-summary compaction",
+      "expected_compaction": {
+        "from_hook": false,
+        "details_keys": ["readFiles", "modifiedFiles"]
+      }
+    },
+    "openai-native-v2": {
+      "classification": "comparable",
+      "extension": null,
+      "extension_path": "docs/vendor/pi-better-compaction",
+      "answer_extension_path": "docs/vendor/pi-better-compaction",
+      "mechanism": "OpenAI Responses V2 opaque compaction state replayed on the resumed answer request; apply `extensions/patches/pi-better-compaction-openai-v2.patch` to the local extension checkout",
+      "extension_config": {
+        "name": "pi-better-compaction",
+        "config": {
+          "enabled": true,
+          "midRun": {"enabled": false, "thresholdPercent": 80},
+          "compactionVersion": "v2",
+          "compactionModel": null,
+          "compactionThinkingLevel": "off",
+          "responsesCompactApis": ["openai-responses", "openai-codex-responses"],
+          "allowCompactionContinuityBreak": true,
+          "notifyOnLoad": false,
+          "debug": true,
+          "logProviderPayloads": true,
+          "logCompactResponses": false,
+          "redactSensitiveData": true,
+          "artifactRoot": "~/.pi/agent/artifacts/pi-better-compaction"
+        }
+      },
+      "expected_compaction": {
+        "from_hook": true,
+        "details_keys": ["strategy", "compactedWindow", "provider", "api", "model"]
+      }
+    }
+  }
+}

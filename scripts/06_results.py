@@ -9,6 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 RUNS = ROOT / "data" / "runs"
 README = ROOT / "README.md"
+NATIVE_RESULTS = ROOT / "OPENAI_NATIVE_RESULTS.md"
 METHODS = json.loads((ROOT / "methods.json").read_text())["methods"]
 FIXTURES = sorted(path.name for path in (ROOT / "data" / "fixtures").iterdir() if (path / "gold.json").is_file())
 
@@ -19,10 +20,12 @@ LABELS = {
     "pi-cc-compact": "[CC Compact](https://github.com/pinion05/pi-cc-compact)",
     "pi-custom-lab-report": "[Lab report](https://github.com/nicobailon/pi-custom-compaction)",
     "pi-custom-lab-report-kimi-k3-high": "[Lab report + Kimi K3 high](https://github.com/nicobailon/pi-custom-compaction)",
+    "pi-custom-default-kimi-k3-high": "[Pi prompt + Kimi K3 high](https://github.com/nicobailon/pi-custom-compaction)",
     "pi-custom-lab-report-deepseek-high": "[Lab report + DeepSeek high](https://github.com/nicobailon/pi-custom-compaction)",
     "pi-custom-handoff": "[Handoff](https://github.com/nicobailon/pi-custom-compaction)",
     "pi-blackhole": "[Blackhole](https://github.com/k0valik/pi-blackhole)",
     "context-fold": "[Context Fold](https://github.com/Middlewatch/context-fold)",
+    "council-default": "[MoA: Kimi, Gemini, DeepSeek → Luna](https://github.com/NousResearch/hermes-agent/blob/c83ea9bed7cac19a0e119c0e3832624f86979531/agent/moa_loop.py#L1330)",
 }
 
 
@@ -71,6 +74,13 @@ def row(method: str) -> tuple[float, str]:
     return statistics.mean(pre), f"| {LABELS[method]} | {mean_sd(list(pre))} | {mean_sd(tokens, 1000)}k | {len(grade_files)}/{len(paths)} | {mean_sd(list(retained))} | {note} |"
 
 
+def native_table() -> str:
+    lines = NATIVE_RESULTS.read_text().splitlines()
+    start = lines.index("| method | pre /10 | retained /20 | n | compaction state | resumed-request evidence |")
+    end = next(index for index in range(start, len(lines)) if index > start and not lines[index])
+    return "\n".join(lines[start:end])
+
+
 def main() -> None:
     methods = [
         "uncompacted-baseline",
@@ -91,6 +101,16 @@ def main() -> None:
         "`context after` is Pi's estimated retained raw context plus summary. `n` is graded runs / intended runs. Values are mean±sample SD. Missing grades are excluded from means.",
         "",
         "[Smart Compact](https://github.com/alpertarhan/pi-smart-compact) uses its manual `fast` command. It reached 18k context on one fixture but failed to create a compaction in six runs.",
+        "",
+        "## OpenAI native compaction",
+        "",
+        "This separate check uses [pi-better-compaction](https://github.com/wassname/pi-better-compaction) with `openai-codex/gpt-5.6-terra`, the OpenAI Responses API, and high thinking. Native V2 compacted and replayed encrypted state in all six native runs.",
+        "",
+        native_table(),
+        "",
+        "These are fact-recall grades only. The native row uses a local endpoint/replay patch.",
+        "",
+        "<!-- PI[openai-codex]: OpenAI native table -->",
         "",
     ])
     current = README.read_text()
