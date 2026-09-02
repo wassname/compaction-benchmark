@@ -18,6 +18,8 @@ LABELS = {
     "pi-smart-compact": "[Smart Compact](https://github.com/alpertarhan/pi-smart-compact)",
     "pi-cc-compact": "[CC Compact](https://github.com/pinion05/pi-cc-compact)",
     "pi-custom-lab-report": "[Lab report](https://github.com/nicobailon/pi-custom-compaction)",
+    "pi-custom-lab-report-kimi-k3-high": "[Lab report + Kimi K3 high](https://github.com/nicobailon/pi-custom-compaction)",
+    "pi-custom-lab-report-deepseek-high": "[Lab report + DeepSeek high](https://github.com/nicobailon/pi-custom-compaction)",
     "pi-custom-handoff": "[Handoff](https://github.com/nicobailon/pi-custom-compaction)",
     "pi-blackhole": "[Blackhole](https://github.com/k0valik/pi-blackhole)",
     "context-fold": "[Context Fold](https://github.com/Middlewatch/context-fold)",
@@ -83,7 +85,7 @@ def main() -> None:
     README.write_text("\n".join([
         "# Pi compaction benchmark",
         "",
-        "Pi default and [CC Compact](https://github.com/pinion05/pi-cc-compact) are tied for the best complete result. They retain about 6 of 10 facts from before compaction.",
+        "Pi default and [CC Compact](https://github.com/pinion05/pi-cc-compact) are tied for the best complete result. The Kimi K3 and DeepSeek high rows are pending.",
         "",
         "This benchmark starts with a real Pi session. A method replaces old messages with a summary. The resumed model then answers 20 questions. `pre` is 10 facts from before the summary. The table sorts by `pre`.",
         "",

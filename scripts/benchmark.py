@@ -970,8 +970,9 @@ def validate_goal2(trial: int) -> dict[str, Any]:
 def validate_custom_runs() -> dict[str, Any]:
     methods = load_methods()
     rows = []
-    for method_name in ("pi-custom-handoff", "pi-custom-lab-report"):
-        method = methods[method_name]
+    for method_name, method in methods.items():
+        if "custom_policy" not in method:
+            continue
         template = custom_template_path(method)
         if template is None:
             raise BenchmarkError(f"{method_name}: missing custom template")
