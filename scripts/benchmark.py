@@ -391,11 +391,14 @@ def source_evidence(fixture: Fixture) -> str:
 
 def pi_command(
     session: Path,
-    provider: str = MODEL_PROVIDER,
-    model_id: str = MODEL_ID,
-    thinking_level: str = THINKING_LEVEL,
+    provider: str | None = None,
+    model_id: str | None = None,
+    thinking_level: str | None = None,
     extension: str | None = None,
 ) -> list[str]:
+    provider = provider or MODEL_PROVIDER
+    model_id = model_id or MODEL_ID
+    thinking_level = thinking_level or THINKING_LEVEL
     command = [
         "pi",
         "--mode",
@@ -415,7 +418,7 @@ def pi_command(
         "--no-approve",
     ]
     if extension:
-        command.extend(("-e", f"npm:{extension}"))
+        command.extend(("-e", extension if extension.startswith("/") else f"npm:{extension}"))
     return command
 
 
@@ -423,12 +426,15 @@ def start_pi(
     session: Path,
     agent_dir: Path,
     artifacts: Path,
-    provider: str = MODEL_PROVIDER,
-    model_id: str = MODEL_ID,
-    thinking_level: str = THINKING_LEVEL,
+    provider: str | None = None,
+    model_id: str | None = None,
+    thinking_level: str | None = None,
     extension: str | None = None,
     home: Path | None = None,
 ) -> RpcProcess:
+    provider = provider or MODEL_PROVIDER
+    model_id = model_id or MODEL_ID
+    thinking_level = thinking_level or THINKING_LEVEL
     env = os.environ.copy()
     env["PI_CODING_AGENT_DIR"] = str(agent_dir)
     if home is not None:
@@ -668,6 +674,19 @@ def custom_template_path(method: dict[str, Any]) -> Path | None:
     return path
 
 
+def answer_extension_path(method: dict[str, Any]) -> str | None:
+    extension = method.get("answer_extension")
+    if extension is not None:
+        return extension
+    relative = method.get("answer_extension_path")
+    if relative is None:
+        return None
+    path = ROOT / relative
+    if not path.is_dir() and not path.is_file():
+        raise BenchmarkError(f"Answer extension does not exist: {path}")
+    return str(path)
+
+
 def run_baseline(fixture: Fixture, trial: int) -> Path:
     fixture.assert_unchanged()
     gold = load_gold(fixture)
@@ -735,9 +754,12 @@ def run_compaction_method(fixture: Fixture, method_name: str, trial: int) -> Pat
     measured_pi_version = measure_pi_version()
     if measured_pi_version != manifest["pi_version"]:
         raise BenchmarkError(f"pi version {measured_pi_version} != methods.json {manifest['pi_version']}")
-    extension = method["extension"]
-    measured_integrity = measure_npm_integrity(extension) if extension else None
-    if extension and method.get("npm_integrity") and measured_integrity != method["npm_integrity"]:
+    npm_extension = method.get("extension")
+    extension = npm_extension
+    if extension is None and "extension_path" in method:
+        extension = str(ROOT / method["extension_path"])
+    measured_integrity = measure_npm_integrity(npm_extension) if npm_extension else None
+    if npm_extension and method.get("npm_integrity") and measured_integrity != method["npm_integrity"]:
         raise BenchmarkError(f"{method_name}: npm integrity {measured_integrity} != methods.json {method['npm_integrity']}")
     gold = load_gold(fixture)
     work = RUNS / fixture.name / method_name / f"trial-{trial:02d}"
@@ -766,10 +788,11 @@ def run_compaction_method(fixture: Fixture, method_name: str, trial: int) -> Pat
             "method_spec_sha256": hashlib.sha256(json.dumps(method, sort_keys=True).encode()).hexdigest(),
             "compact_command": compact_command,
             "compaction_request": method.get("compaction_command", "rpc:compact"),
-            "answer_command": pi_command(session),
+            "answer_command": pi_command(session, extension=answer_extension_path(method)),
             "measured_pi_version": measured_pi_version,
             "measured_npm_integrity": measured_integrity,
             "custom_template_sha256": sha256(custom_template_path(method)) if custom_template_path(method) else None,
+            "extension_config_sha256": hashlib.sha256(json.dumps(method.get("extension_config"), sort_keys=True).encode()).hexdigest() if "extension_config" in method else None,
         },
     )
     source_ids = {entry.get("id") for entry in fixture.entries}
@@ -790,11 +813,13 @@ def run_compaction_method(fixture: Fixture, method_name: str, trial: int) -> Pat
     if "custom_policy" in method:
         write_json(compact_home / ".pi" / "agent" / "compaction-policy.json", method["custom_policy"])
         template_path = custom_template_path(method)
-        if template_path is None:
-            raise BenchmarkError(f"{method_name}: custom policy requires custom_template")
-        destination = compact_home / ".pi" / "agent" / "compaction-template.md"
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(template_path, destination)
+        if template_path is not None:
+            destination = compact_home / ".pi" / "agent" / "compaction-template.md"
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(template_path, destination)
+    if "extension_config" in method:
+        config_path = compact_home / ".pi" / "agent" / "extensions" / method["extension_config"]["name"] / "config.json"
+        write_json(config_path, method["extension_config"]["config"])
     rpc = start_pi(session, compact_agent_dir, compact_artifacts, extension=extension, home=compact_home)
     started = time.perf_counter()
     try:
@@ -849,7 +874,13 @@ def run_compaction_method(fixture: Fixture, method_name: str, trial: int) -> Pat
     )
     answer_artifacts = artifacts / "answer"
     answer_agent_dir = isolated_agent_dir(work / "answer-agent")
-    answer_rpc = start_pi(session, answer_agent_dir, answer_artifacts)
+    answer_home = work / "answer-home"
+    answer_home.mkdir(parents=True, exist_ok=True)
+    answer_extension = answer_extension_path(method)
+    if "extension_config" in method and answer_extension is not None:
+        config_path = answer_home / ".pi" / "agent" / "extensions" / method["extension_config"]["name"] / "config.json"
+        write_json(config_path, method["extension_config"]["config"])
+    answer_rpc = start_pi(session, answer_agent_dir, answer_artifacts, extension=answer_extension, home=answer_home)
     answer_started = time.perf_counter()
     try:
         before_answer_entries = answer_rpc.command("get_entries")["data"]["entries"]
@@ -909,12 +940,18 @@ def validate_method_run(fixture: Fixture, method_name: str, trial: int) -> dict[
     template_path = custom_template_path(method)
     if run.get("custom_template_sha256") != (sha256(template_path) if template_path else None):
         raise BenchmarkError(f"{fixture.name}/{method_name}: validation custom template hash mismatch")
+    expected_config_hash = hashlib.sha256(json.dumps(method.get("extension_config"), sort_keys=True).encode()).hexdigest() if "extension_config" in method else None
+    if run.get("extension_config_sha256") != expected_config_hash:
+        raise BenchmarkError(f"{fixture.name}/{method_name}: validation extension config hash mismatch")
     # Embedded identities and exact commands, so a copied trial-1 directory cannot pass as trial 2. (claude, review P1)
     for label, record in (("run", run), ("compaction", compact), ("answer", answer)):
         if record.get("fixture") != fixture.name or record.get("method") != method_name or record.get("trial") != trial:
             raise BenchmarkError(f"{fixture.name}/{method_name}: {label} record has wrong fixture/method/trial")
-    expected_compact_command = pi_command(work / "session.jsonl", extension=method["extension"])
-    expected_answer_command = pi_command(work / "session.jsonl")
+    expected_extension = method.get("extension")
+    if expected_extension is None and "extension_path" in method:
+        expected_extension = str(ROOT / method["extension_path"])
+    expected_compact_command = pi_command(work / "session.jsonl", extension=expected_extension)
+    expected_answer_command = pi_command(work / "session.jsonl", extension=answer_extension_path(method))
     if run["compact_command"] != expected_compact_command or run["answer_command"] != expected_answer_command:
         raise BenchmarkError(f"{fixture.name}/{method_name}: validation command mismatch")
     if "compaction_command" in method and run.get("compaction_request") != method["compaction_command"]:
@@ -927,11 +964,15 @@ def validate_method_run(fixture: Fixture, method_name: str, trial: int) -> dict[
     compaction_index = next((index for index, entry in enumerate(entries) if entry.get("id") == compact["entry"]["id"]), None)
     if compaction_index is None or any(entry_uses_tool(entry) for entry in entries[compaction_index + 1 :]):
         raise BenchmarkError(f"{fixture.name}/{method_name}: validation found missing compaction or answer tool use")
-    expected_extension = method["extension"]
-    if expected_extension and f"npm:{expected_extension}" not in run["compact_command"]:
-        raise BenchmarkError(f"{fixture.name}/{method_name}: pinned extension missing from command")
-    if any(argument == "-e" for argument in run["answer_command"]):
+    if expected_extension is not None:
+        expected_extension_argument = expected_extension if expected_extension.startswith("/") else f"npm:{expected_extension}"
+        if expected_extension_argument not in run["compact_command"]:
+            raise BenchmarkError(f"{fixture.name}/{method_name}: pinned extension missing from command")
+    expected_answer_extension = answer_extension_path(method)
+    if expected_answer_extension is None and any(argument == "-e" for argument in run["answer_command"]):
         raise BenchmarkError(f"{fixture.name}/{method_name}: answer phase loaded an extension")
+    if expected_answer_extension is not None and "-e" not in run["answer_command"]:
+        raise BenchmarkError(f"{fixture.name}/{method_name}: answer phase omitted the extension")
     return {
         "fixture": fixture.name,
         "method": method_name,
@@ -974,8 +1015,6 @@ def validate_custom_runs() -> dict[str, Any]:
         if "custom_policy" not in method:
             continue
         template = custom_template_path(method)
-        if template is None:
-            raise BenchmarkError(f"{method_name}: missing custom template")
         for fixture_name in fixture_names():
             fixture = Fixture.load(fixture_name)
             for trial in TRIALS:
@@ -986,14 +1025,14 @@ def validate_custom_runs() -> dict[str, Any]:
                 template_path = home / ".pi" / "agent" / "compaction-template.md"
                 if json.loads(policy_path.read_text()) != method["custom_policy"]:
                     raise BenchmarkError(f"{fixture.name}/{method_name}: sandbox policy mismatch")
-                if sha256(template_path) != sha256(template):
+                if template is not None and sha256(template_path) != sha256(template):
                     raise BenchmarkError(f"{fixture.name}/{method_name}: sandbox template mismatch")
                 row.update(
                     {
-                        "prompt_sha256": sha256(template),
+                        "prompt_sha256": sha256(template) if template else None,
                         "sandbox_home": str(home),
                         "sandbox_policy": str(policy_path),
-                        "sandbox_template": str(template_path),
+                        "sandbox_template": str(template_path) if template else None,
                     }
                 )
                 rows.append(row)
@@ -1422,15 +1461,24 @@ def grade_baseline(fixture: Fixture, trial: int) -> Path:
     return result_path
 
 
-def grade_method_run(fixture: Fixture, method_name: str, trial: int) -> Path:
+def grade_method_run(fixture: Fixture, method_name: str, trial: int, *, skip_inventions: bool = False) -> Path:
     """Grade a validated method run; refuses unvalidated artifacts. (claude)"""
     validate_method_run(fixture, method_name, trial)
     gold = load_gold(fixture)
     eligible_judges, calibration_id = require_judge_calibration(fixture)
     work = RUNS / fixture.name / method_name / f"trial-{trial:02d}"
     answer = json.loads((work / "answer.json").read_text())["answer"]
-    result = grade_answer_panel(fixture, gold, answer, f"method-grade-{method_name}", trial, eligible_judges)
+    result = grade_answer_panel(
+        fixture,
+        gold,
+        answer,
+        f"method-grade-{method_name}",
+        trial,
+        eligible_judges,
+        skip_inventions=skip_inventions,
+    )
     result["calibration_id"] = calibration_id
+    result["invention_check"] = "skipped" if skip_inventions else "completed"
     result_path = work / "grade.json"
     write_json(result_path, result)
     return result_path
@@ -1699,6 +1747,7 @@ def main() -> None:
     parser.add_argument("fixtures", nargs="*", help="fixture names; default: all")
     parser.add_argument("--trial", type=int, choices=TRIALS, help="run one trial instead of all three")
     parser.add_argument("--method", choices=tuple(load_methods()), help="compaction method for run-method")
+    parser.add_argument("--skip-inventions", action="store_true", help="grade fact recall without the invention pass")
     args = parser.parse_args()
     names = args.fixtures or fixture_names()
     for name in names:
@@ -1730,7 +1779,7 @@ def main() -> None:
                 elif args.command == "validate-run":
                     result = validate_method_run(fixture, args.method, trial)
                 else:
-                    result = grade_method_run(fixture, args.method, trial)
+                    result = grade_method_run(fixture, args.method, trial, skip_inventions=args.skip_inventions)
                 print(json.dumps(result, indent=2) if isinstance(result, dict) else result)
         return
     if args.command in {"gold", "goal1"}:
