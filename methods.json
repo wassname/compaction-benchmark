@@ -34,13 +34,15 @@
     },
     "pi-smart-compact": {
       "classification": "comparable",
-      "protocol": "manual_rpc_compact",
+      "protocol": "extension_slash_command",
       "extension": "pi-smart-compact@9.5.0",
       "source_url": "https://github.com/alpertarhan/pi-smart-compact",
       "npm_integrity": "sha512-Xy2DvexLKQlVH01jqrTq/Sw+Eiiqj5fgS6ufAgFl0p/n0d3NUjJNb1sFnrkD77XrKWXb43nT/cA/oWqTGmCmRQ==",
       "mechanism": "extension-provided extraction, synthesis, and verification",
       "settings": {
         "smartCompact": {
+          "summaryThinkingLevel": "medium",
+          "segmentationThinkingLevel": "medium",
           "autoTrigger": true,
           "autoTriggerStrategy": "native-hook",
           "minContextPercent": 1,
@@ -49,6 +51,7 @@
           "agentToolAccess": "disabled"
         }
       },
+      "compaction_command": "/smart-compact fast",
       "expected_compaction": {
         "from_hook": true,
         "details_keys": [

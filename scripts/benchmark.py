@@ -765,6 +765,7 @@ def run_compaction_method(fixture: Fixture, method_name: str, trial: int) -> Pat
             "method_spec": method,
             "method_spec_sha256": hashlib.sha256(json.dumps(method, sort_keys=True).encode()).hexdigest(),
             "compact_command": compact_command,
+            "compaction_request": method.get("compaction_command", "rpc:compact"),
             "answer_command": pi_command(session),
             "measured_pi_version": measured_pi_version,
             "measured_npm_integrity": measured_integrity,
@@ -798,15 +799,15 @@ def run_compaction_method(fixture: Fixture, method_name: str, trial: int) -> Pat
     started = time.perf_counter()
     try:
         before_stats = rpc.command("get_session_stats")["data"]
-        compact_response = rpc.command("compact", timeout=1800)
+        if "compaction_command" in method:
+            rpc.command("prompt", message=method["compaction_command"], timeout=1800)
+        else:
+            compact_response = rpc.command("compact", timeout=1800)
         compact_seconds = time.perf_counter() - started
         after_stats = rpc.command("get_session_stats")["data"]
         compact_entries = rpc.command("get_entries")["data"]["entries"]
     finally:
         rpc.close()
-    data = compact_response.get("data")
-    if not isinstance(data, dict) or not isinstance(data.get("summary"), str) or not data["summary"].strip():
-        raise BenchmarkError(f"{fixture.name}/{method_name}: compaction returned no summary")
     new_compactions = [
         entry for entry in compact_entries
         if entry.get("type") == "compaction" and entry.get("id") not in source_ids
@@ -814,6 +815,20 @@ def run_compaction_method(fixture: Fixture, method_name: str, trial: int) -> Pat
     if len(new_compactions) != 1:
         raise BenchmarkError(f"{fixture.name}/{method_name}: expected one new compaction, found {len(new_compactions)}")
     compaction_entry = new_compactions[0]
+    if "compaction_command" in method:
+        details = compaction_entry.get("details")
+        if not isinstance(details, dict):
+            raise BenchmarkError(f"{fixture.name}/{method_name}: command compaction has no details")
+        data = {
+            "summary": compaction_entry.get("summary"),
+            "tokensBefore": compaction_entry.get("tokensBefore"),
+            "estimatedTokensAfter": details.get("estimatedAfterTokens"),
+            "firstKeptEntryId": compaction_entry.get("firstKeptEntryId"),
+        }
+    else:
+        data = compact_response.get("data")
+    if not isinstance(data, dict) or not isinstance(data.get("summary"), str) or not data["summary"].strip():
+        raise BenchmarkError(f"{fixture.name}/{method_name}: compaction returned no summary")
     if compaction_entry.get("summary") != data["summary"] or compaction_entry.get("tokensBefore") != data.get("tokensBefore"):
         raise BenchmarkError(f"{fixture.name}/{method_name}: RPC result and session compaction differ")
     validate_compaction_handler(fixture, method_name, method, compaction_entry, compact_artifacts / "stderr.log")
@@ -902,6 +917,8 @@ def validate_method_run(fixture: Fixture, method_name: str, trial: int) -> dict[
     expected_answer_command = pi_command(work / "session.jsonl")
     if run["compact_command"] != expected_compact_command or run["answer_command"] != expected_answer_command:
         raise BenchmarkError(f"{fixture.name}/{method_name}: validation command mismatch")
+    if "compaction_command" in method and run.get("compaction_request") != method["compaction_command"]:
+        raise BenchmarkError(f"{fixture.name}/{method_name}: validation compaction request mismatch")
     if answer["compaction_sha256"] != sha256(compact_path):
         raise BenchmarkError(f"{fixture.name}/{method_name}: answer references another compaction")
     validate_compaction_handler(fixture, method_name, method, compact["entry"], artifacts / "compact" / "stderr.log")

@@ -15,6 +15,7 @@ FIXTURES = sorted(path.name for path in (ROOT / "data" / "fixtures").iterdir() i
 LABELS = {
     "uncompacted-baseline": "baseline, no compaction",
     "pi-default": "Pi default",
+    "pi-smart-compact": "[Smart Compact](https://github.com/alpertarhan/pi-smart-compact)",
     "pi-cc-compact": "[CC Compact](https://github.com/pinion05/pi-cc-compact)",
     "pi-custom-lab-report": "[Lab report](https://github.com/nicobailon/pi-custom-compaction)",
     "pi-custom-handoff": "[Handoff](https://github.com/nicobailon/pi-custom-compaction)",
@@ -23,16 +24,15 @@ LABELS = {
 }
 
 
-def values(path: Path) -> tuple[int, int, int]:
+def values(path: Path) -> tuple[int, int]:
     facts = json.loads(path.read_text())["facts"]
     retained = sum(fact["grade"] == "retained" for fact in facts)
     pre = sum(fact["grade"] == "retained" and fact["id"] <= "fact-10" for fact in facts)
-    tail = sum(fact["grade"] == "retained" and fact["id"] > "fact-10" for fact in facts)
-    return retained, pre, tail
+    return retained, pre
 
 
-def mean_sd(items: list[int]) -> str:
-    return f"{statistics.mean(items):.1f}±{statistics.stdev(items) if len(items) > 1 else 0.0:.1f}"
+def mean_sd(items: list[int], scale: float = 1) -> str:
+    return f"{statistics.mean(items) / scale:.1f}±{(statistics.stdev(items) if len(items) > 1 else 0.0) / scale:.1f}"
 
 
 def grade_paths(method: str) -> list[Path]:
@@ -40,19 +40,33 @@ def grade_paths(method: str) -> list[Path]:
     return [RUNS / fixture / method / f"trial-{trial:02d}" / "grade.json" for fixture in FIXTURES for trial in trials]
 
 
+def tokens_after(method: str, grade_files: list[Path]) -> list[int]:
+    if method == "uncompacted-baseline":
+        return [
+            json.loads((ROOT / "data" / "fixtures" / fixture / "manifest.json").read_text())["first_compaction"]["tokens_before"]
+            for fixture in FIXTURES
+        ]
+    return [
+        json.loads(path.with_name("compaction.json").read_text())["response"]["estimatedTokensAfter"]
+        for path in grade_files
+    ]
+
+
 def row(method: str) -> tuple[float, str]:
     paths = grade_paths(method)
-    scored = [values(path) for path in paths if path.is_file()]
-    intended = len(paths)
-    retained, pre, tail = zip(*scored)
-    missing = intended - len(scored)
-    if missing:
+    grade_files = [path for path in paths if path.is_file()]
+    retained, pre = zip(*(values(path) for path in grade_files))
+    missing = len(paths) - len(grade_files)
+    if method == "pi-smart-compact" and missing:
+        note = f"{missing} command failures"
+    elif missing:
         note = f"{missing} grade missing"
     elif method == "pi-blackhole":
         note = "`tailBehavior=pi-default`"
     else:
         note = ""
-    return statistics.mean(pre), f"| {LABELS[method]} | {len(scored)}/{intended} | {mean_sd(list(retained))} | {mean_sd(list(pre))} | {mean_sd(list(tail))} | {note} |"
+    tokens = tokens_after(method, grade_files)
+    return statistics.mean(pre), f"| {LABELS[method]} | {mean_sd(list(pre))} | {mean_sd(tokens, 1000)}k | {len(grade_files)}/{len(paths)} | {mean_sd(list(retained))} | {note} |"
 
 
 def main() -> None:
@@ -62,7 +76,6 @@ def main() -> None:
             name
             for name, spec in METHODS.items()
             if spec["classification"].startswith("comparable")
-            and name != "pi-smart-compact"
         ],
     ]
     rows = [row(method) for method in methods]
@@ -72,18 +85,18 @@ def main() -> None:
         "",
         "Pi default and [CC Compact](https://github.com/pinion05/pi-cc-compact) are tied for the best complete result. They retain about 6 of 10 facts from before compaction.",
         "",
-        "This benchmark starts with a real Pi session. A method replaces old messages with a summary. The resumed model then answers 20 questions. `pre` is 10 facts from before the summary. `tail` is 10 facts Pi kept after the cut. The table sorts by `pre`.",
+        "This benchmark starts with a real Pi session. A method replaces old messages with a summary. The resumed model then answers 20 questions. `pre` is 10 facts from before the summary. The table sorts by `pre`.",
         "",
         "All answer calls use `openrouter/deepseek/deepseek-v4-flash-0731:fp8` at `medium`.",
         "",
-        "| method | n | retained /20 | pre /10 | tail /10 | note |",
+        "| method | pre /10 | tokens after | n | retained /20 | note |",
         "|---|---:|---:|---:|---:|---|",
         baseline[1],
         *[item[1] for item in compared],
         "",
-        "`n` is graded runs / intended runs. Values are mean±sample SD. Missing grades are excluded from means.",
+        "`tokens after` is estimated session context after compaction. `n` is graded runs / intended runs. Values are mean±sample SD. Missing grades are excluded from means.",
         "",
-        "[Smart Compact](https://github.com/alpertarhan/pi-smart-compact) is excluded. Its native-hook default kept 92k raw tokens and left some `pre` material outside the summary. This test needs a fixed output budget before it can compare Smart Compact fairly.",
+        "[Smart Compact](https://github.com/alpertarhan/pi-smart-compact) uses its manual `fast` command. It reached 18k tokens on one fixture but failed to create a compaction in six runs.",
         "",
         "<!-- PI[openai-codex] -->",
         "",
