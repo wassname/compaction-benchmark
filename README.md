@@ -2,14 +2,18 @@
 
 I wanted to know which compaction is the best for pi. So I evaluated this way
 
-- find some complex sessions
-- rewind to the first commit
-- ask "What are 10 critical facts"
-- for all pi compaction candidated,
-  - copy the session and compact
-  - ask them question about the facts, judge if they recalled them
+- find some complex pi sessions
+- rewind to just before first compact
+- ask "What are 10 critical facts" and record these as the ideal answers
+- for N=3
+  - for all pi compaction candidated,
+    - copy the session and compact
+    - ask them question about the facts,
+    - judge: how many facts did they recall correctly?
 
 So you can see below that the baseline is "don't compact at all" and that recalls 9/10 facts, while pi default recalls 6/10 facts (worse). But of course we do need to compact or we will get context rot, or hit the token limit.
+
+Conclusions: pi's default compaction is good, as is the leaked claude code compaction.
 
 All answer calls use `openrouter/deepseek/deepseek-v4-flash-0731:fp8` at `medium`.
 
